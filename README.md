@@ -15,14 +15,14 @@ In an era where dozens of groundbreaking papers are released daily on ArXiv, kee
 
 ---
 
-
-# 🔗 Documentation
+## 🔗 Documentation
 
 | Document | Description | 描述 |
 |----------|-------------|------|
 | [Key Features](#-key-features) | Overview of system capabilities | 系统功能总览 |
 | [Getting Started](#-getting-started) | How to configure and run this project | 如何配置与运行本项目 |
-| [User Guide](#-user-guide) | Quick start guide | 一份简单的使用说明 |
+| [Quick Usage Guide](#-quick-usage-guide) | Basic UI intro & minimal usage workflow | 基础使用指南：界面按钮与最小可用流程 |
+| [Full User Manual](#-full-user-guide) | Detailed explanation of all features | 完整用户手册：所有功能的深度说明 |
 | [Project Structure](#-project-structure) | Project Structure Description | 项目结构说明 |
 | [FAQ](#-faq) | Common problems and possible solutions | 常见问题与可能的解决方案 |
 
@@ -55,8 +55,6 @@ The system includes these default domains (modifiable):
 -   **Import/Export**: Share specific **Topics** (e.g., "Transformers") or entire **Domain (Pillars)** with colleagues via JSON. Collaborative curation made easy.
 -   **Comments**: You can also comment on each paper to record your thoughts or ideas, or to share these with your co-operators -- by synchronizing shared database files (e.g., upload the shared database file to Nutstore APP, then link to this file, rather than `./public/knowledge-base.json`. This switch is very easy, and you can switch back at any time.)
 
-
-
 ---
 
 ## 🚀 Getting Started
@@ -82,7 +80,9 @@ The system includes these default domains (modifiable):
    - **Windows**: *Double-click* `AI-Beacon-Web\quick_start_win\run.bat`
    - **macOS**: *Double-click* `AI-Beacon-Web/quick_start_os/run.command`   
 
-## 📖 User Guide
+---
+
+## 🚀 Quick Usage Guide
 
 ### 1. Edit Mode
 Toggle the **"Edit Mode"** button in the top right header. This unlocks:
@@ -105,6 +105,13 @@ Toggle the **"Edit Mode"** button in the top right header. This unlocks:
 -   **Export Pillar**: Click the download icon next to the Pillar title to save the entire domain as JSON.
 -   **Export Topic**: Click the download icon next to a Topic title.
 -   **Import**: Use the import buttons at the bottom of the Home screen (for Pillars) or the Topic list (for Topics) to load JSON files shared by others.
+
+---
+
+## 📖 Full User Manual
+
+### 1. 
+
 
 ---
 
