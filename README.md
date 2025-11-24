@@ -20,11 +20,11 @@ In an era where dozens of groundbreaking papers are released daily on ArXiv, kee
 
 | Document | Description | 描述 |
 |----------|-------------|------|
-| [Key Features](#key-features) | Overview of system capabilities | 系统功能总览 |
-| [Getting Started](#getting-started) | How to configure and run this project | 如何配置与运行本项目 |
-| [User Guide](#user-guide) | Quick start guide | 一份简单的使用说明 |
-| [Project Structure](#project-structure) | Project Structure Description | 项目结构说明 |
-| [FAQ](#faq) | Common problems and possible solutions | 常见问题与可能的解决方案 |
+| [Key Features](#-key-features) | Overview of system capabilities | 系统功能总览 |
+| [Getting Started](#-getting-started) | How to configure and run this project | 如何配置与运行本项目 |
+| [User Guide](#-user-guide) | Quick start guide | 一份简单的使用说明 |
+| [Project Structure](#-project-structure) | Project Structure Description | 项目结构说明 |
+| [FAQ](#-faq) | Common problems and possible solutions | 常见问题与可能的解决方案 |
 
 ## ✨ Key Features 
 
