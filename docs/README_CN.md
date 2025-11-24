@@ -17,18 +17,18 @@
 
 ## 🔗 文档
 
-| 文档 | 描述 | 文件 | 描述 |
-|------|------|------|------|
-| [完整用户手册 (中文版)](./docs/full_user_manual-cn.md) | 所有功能的详细说明 | [Full User Manual (English)](./docs/full_user_manual-en.md) | Detailed explanation of all features |
+| 文档 | 描述 |
+|------|------|
+| [完整用户手册 (中文版)](../docs/full_user_manual-cn.md) | 所有功能的详细说明 (强烈推荐查看) |
 
 ## 🔗 快速跳转
-| 部分 | 描述 | Section | Description |
-|------|------|--------|------------|
-| [核心功能](#-key-features) | 系统功能总览 | Key Features | Overview of system capabilities |
-| [快速上手](#-getting-started) | 如何配置与运行本项目 | Getting Started | How to configure and run this project |
-| [基础使用指南](#-quick-usage-guide) | 界面按钮与最小可用流程 | Quick Usage Guide | Basic UI intro & minimal usage workflow |
-| [项目结构](#-project-structure) | 项目结构说明 | Project Structure | Project Structure Description |
-| [常见问题](#-faq) | 常见问题与可能的解决方案 | FAQ | Common problems and possible solutions |
+| 部分 | 描述 |
+|------|------|
+| [核心功能](#-核心功能) | 系统功能总览 |
+| [快速上手](#-快速上手) | 如何配置与运行本项目 |
+| [基础使用指南](#-基础使用指南) | 界面按钮与最小可用流程 | 
+| [项目结构](#-项目结构) | 项目结构说明 | Project Structure |
+| [常见问题](#-常见问题) | 常见问题与可能的解决方案 |
 
 ## ✨ 核心功能
 
