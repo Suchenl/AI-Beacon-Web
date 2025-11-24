@@ -23,6 +23,8 @@ In an era where dozens of groundbreaking papers are released daily on ArXiv, kee
 |----------|-------------|------|------|
 | [Full User Manual](./docs/full_user_manual-en.md) | Detailed explanation of all features | [完整用户手册 (中文版)](./docs/full_user_manual-cn.md) | 完整用户手册：所有功能的深度说明 |
 
+*We highly recommend checking out the **Full User Manual**, which provides a quick, illustrated guide to all features and how to use them. Estimated reading time: 5 minutes.*
+
 ## 🔗 Quick Jump
 | Section | Description | 描述 |
 |----------|------------|------|
