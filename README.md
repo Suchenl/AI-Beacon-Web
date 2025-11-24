@@ -110,8 +110,56 @@ Toggle the **"Edit Mode"** button in the top right header. This unlocks:
 
 ## 📖 Full User Manual
 
-### 1. 
+### 1. Add New Paper (manually)
 
+<img src="assets/guide_images/addNewPaper-manually/step1-openEditMode.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/addNewPaper-manually/step2-clickHere.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/addNewPaper-manually/step3-fillPartialInfo-AIFill.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/addNewPaper-manually/step4-noPromblem-save.png" alt="Homepage" width="100%"/>
+
+### 2. Create Pillars (manually)
+<img src="assets/guide_images/createPillars-manually/step1-returnToHomepage.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/createPillars-manually/step2-scrollDown.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/createPillars-manually/step3-openEditMode.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/createPillars-manually/step4-clickHere.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/createPillars-manually/step5-clickToEnter.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/createPillars-manually/step6-changeResearchArea&Descriptions.png" alt="Homepage" width="100%"/>
+
+### 3. Create Topics (manually)
+<img src="assets/guide_images/createTopics-manually/step1-openEditMode.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/createTopics-manually/step2-clickHere.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/createTopics-manually/step3-chooseNextStep.png" alt="Homepage" width="100%"/>
+
+### 4. Find New Papers (AI Recommendation)
+<img src="assets/guide_images/findNewPapers-AI_Recommendation/step1-clickHere.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/findNewPapers-AI_Recommendation/step2-searching.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/findNewPapers-AI_Recommendation/step3-chooseNextStep.png" alt="Homepage" width="100%"/>
+
+### 5. Share Knowledge Base
+<img src="assets/guide_images/shareKnowledgeBase/step1-clickHere.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareKnowledgeBase/step2-saveDB.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareKnowledgeBase/step3-chooseAsaveLocaltion.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareKnowledgeBase/step4_1-auto_linked.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareKnowledgeBase/step4_2-auto_linked.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareKnowledgeBase/step5-openDBfile.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareKnowledgeBase/step6-chooseFileToOpen.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareKnowledgeBase/step7-autoSync.png" alt="Homepage" width="100%"/>
+
+### 6. Share Domains (Pillars)
+<img src="assets/guide_images/sharePillars/step1-chooseAPillar.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/sharePillars/step2-clickHere.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/sharePillars/step3-chooseAsaveLocaltion.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/sharePillars/step4-returnHomepage&OpenEditMode.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/sharePillars/step5-clickHere.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/sharePillars/step6-chooseAPillarToUpload.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/sharePillars/step7-clickToEdit&CloseEditMode.png" alt="Homepage" width="100%"/>
+
+### 7. Share Topics
+<img src="assets/guide_images/shareTopics/step1-clickToDownload.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareTopics/step2-chooseAsaveLocaltion.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareTopics/step3-scrollToBottom&openEditMode&clickToUpload.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareTopics/step4-chooseAfileToUpload.png" alt="Homepage" width="100%"/>
+<img src="assets/guide_images/shareTopics/step5-edit&closeEditMode.png" alt="Homepage" width="100%"/>
 
 ---
 
