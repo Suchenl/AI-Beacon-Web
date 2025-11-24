@@ -95,6 +95,7 @@ Toggle the **"Edit Mode"** button in the top right header. This unlocks:
 ```
 ai-beacon/
 ├── assets/              # Resource files (icons, images)
+├── prompts/             # AI prompts
 ├── public/              # Public assets
 ├── quick_start_win/
 │   ├── init.bat         # Install dependencies and initialize configurations (for Windows)
