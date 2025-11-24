@@ -141,6 +141,43 @@ ai-beacon/
 
 ## ❓ FAQ
 
+**Q1: When running the `init.xxx` file, can I use APIs from models other than Gemini for initialization?**
+
+*A1: The current version only supports Gemini. Using other models may cause errors. Future versions may provide support for additional models.*
+
+**Q2: Do I need to relink the knowledge base every time I open it?**
+
+*A2: When linking for the first time, you can choose to keep the link and let your browser remember the setting. After that, you shouldn’t be prompted again. Refreshing or restarting the software will not break the link unless you manually disconnect it.*
+
+**Q3: Does the software support real-time collaboration for multiple users?**
+
+*A3: Yes. The developers recommend using file-sharing tools such as Nutstore to share the knowledge base. When one user updates the database (e.g., adding new papers or comments), other users can see the changes after refreshing.*
+
+**Q4: Can it collaborate over the internet?**
+
+*A4: The software does not natively support cloud-based collaboration. The project is designed to maintain a local knowledge base for data privacy. However, for real-time team collaboration, see the solution described in Q3.*
+
+**Q5: Is the AI paper discovery feature reliable? Can it hallucinate?**
+
+*A5: We intentionally minimize AI hallucinations and strive to return accurate paper data. The process for discovering new papers is as follows:*
+- *1. Use strict prompts to make the AI return real papers, summaries, abstracts, corresponding links to the paper and code, as well as citation counts and GitHub stars.*
+- *2. Validate basic fields (title, paper link, authors, etc.) to ensure correct formatting.*
+- *3. Visit the links and extract the page title to check if it matches the paper title.*
+- *4. If it doesn’t match → mark as a critical error → reject the paper.*
+- *5. If it cannot be verified or issues like RECITATION appear → continue processing.*
+- *6. Retry up to three times. If it still doesn’t match, move on to the next paper.*
+*Therefore, it is normal that the AI may be asked to find n papers but returns fewer than n.*
+
+**Q6: The AI paper discovery process takes a long time. Can it be optimized?**
+
+*A6: There is a trade-off between data fidelity and speed. We will attempt to optimize this in the next version.*
+
+**Q7: Can I perform other actions while AI is discovering new papers? Will it interrupt the process?**
+
+*A7: As long as you don’t return to the homepage, the process will continue uninterrupted. You can leave and check back later without affecting it.*
+
+---
+
 ## 🛠️ Tech Stack
 
 -   **Frontend**: React 19, TypeScript, Vite
