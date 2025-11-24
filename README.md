@@ -1,6 +1,6 @@
 # 📡 AI Beacon
 > ⚠️ This repository supports **both English and Chinese README**.  
-> For 中文版本，请点击 [这里](./docs/README-cn.md)
+> For 中文版本，请点击 [这里](./docs/README-CN.md)
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)
 ![Tech](https://img.shields.io/badge/Built%20with-React%20%7C%20TypeScript%20%7C%20Gemini-purple)
