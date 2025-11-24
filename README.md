@@ -1,4 +1,6 @@
 # 📡 AI Beacon
+> ⚠️ This repository supports **both English and Chinese README**.  
+> For 中文版本，请点击 [这里](README-cn.md)
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)
 ![Tech](https://img.shields.io/badge/Built%20with-React%20%7C%20TypeScript%20%7C%20Gemini-purple)
@@ -64,7 +66,7 @@ The system includes these default domains (modifiable):
 ## 🚀 Getting Started
 
 ### Prerequisites
--   **Node.js** (v16 or higher) - *Only required for development mode*
+-   **Node.js** (v16 or higher)
 -   A **Google Gemini API Key** (Get one for free [here](https://aistudio.google.com/app/apikey))
 
 ### Use Steps
@@ -197,3 +199,5 @@ Distributed under the Apache 2.0 License. See `LICENSE` for more information.
 ---
 
 **Made with ❤️ for the AI Research Community**
+
+**If you find this project helpful, please give it a ⭐! Your support means a lot and encourages us to keep improving and updating the project. Thank you!**
