@@ -1,6 +1,6 @@
 ## 📖 Full User Manual
 
-1. [Add New Paper](#1-add-new-paper-manually)
+1. [Add New Paper](#1-添加新论文-手动)
 2. [Create Pillars](#2-create-pillars-manually)
 3. [Create Topics](#3-create-topics-manually)
 4. [Find New Papers](#4-find-new-papers-ai-recommendation)
@@ -10,7 +10,7 @@
 
 ---
 
-### 1. Add New Paper (manually)
+### 1. 添加新论文 (手动)
 
 **设计理念 & 使用价值**  
 这个功能让你可以把每一篇科研论文或者资料手动加入到你的知识库中。它的目的在于：  
