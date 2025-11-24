@@ -1,0 +1,448 @@
+[
+  {
+    "id": "perception",
+    "title": "I. Perception & Unified Models",
+    "subtitle": "Perceiving, Representing, and Unifying the World",
+    "color": "cyan",
+    "description": "From pure vision to multimodal foundation models. How AI learns to understand diverse sensory inputs (text, image, audio) in a unified latent space.",
+    "topics": [
+      {
+        "id": "ssl",
+        "title": "Self-Supervised Learning (SSL)",
+        "description": "Learning representations from data itself without human labels.",
+        "papers": [
+          {
+            "title": "UnSAMv2: Self-Supervised Learning Enables Segment Anything at Any Granularity",
+            "authors": "Junwei Yu et al.",
+            "year": "2025",
+            "month": "Nov",
+            "day": "17",
+            "summary": "This paper introduces UnSAMv2, a self-supervised learning framework that extends the Segment Anything Model (SAM) to enable continuous control over segmentation granularity without human annotations.",
+            "abstract": "The Segment Anything Model (SAM) family faces limitations in controlling segmentation granularity, often requiring manual refinement. UnSAMv2 addresses this by enabling segmenting anything at any granularity without human annotations, extending UnSAM's divide-and-conquer strategy to discover abundant mask-granularity pairs. It introduces a novel granularity control embedding for precise, continuous control over segmentation scale. With only 6K unlabeled images and 0.02% additional parameters, UnSAMv2 substantially enhances SAM-2, achieving state-of-the-art performance across interactive, whole-image, and video segmentation tasks on over 11 benchmarks, demonstrating how self-supervised learning with granularity awareness can unlock the potential of vision foundation models.",
+            "link": "https://arxiv.org/abs/2511.13714",
+            "codeLink": "https://github.com/yujunwei04/UnSAMv2",
+            "stars": "22",
+            "citationCount": "0",
+            "id": "scan-1763894246314-l3thr0uxn",
+            "isNew": false,
+            "comments": [
+              {
+                "id": "c-1763895559891",
+                "userName": "Suchenl",
+                "text": "111",
+                "timestamp": 1763895559891
+              }
+            ]
+          },
+          {
+            "title": "Variational Self-Supervised Learning",
+            "authors": "Mehmet Can Yavuz et al.",
+            "year": "2025",
+            "month": "Apr",
+            "day": "06",
+            "summary": "This paper introduces Variational Self-Supervised Learning (VSSL), a novel framework that integrates variational inference with self-supervised learning for efficient, decoder-free representation learning by symmetrically coupling two encoders with Gaussian outputs.",
+            "abstract": "VSSL combines variational inference with self-supervised learning to enable efficient, decoder-free representation learning, differing from traditional VAEs by symmetrically coupling two encoders with Gaussian outputs instead of relying on input reconstruction via a decoder. A momentum-updated teacher network defines a dynamic, data-dependent prior, while the student encoder produces an approximate posterior from augmented views, with the reconstruction term in the ELBO replaced by a cross-view denoising objective. The framework also introduces cosine-based formulations of KL and log-likelihood terms to enhance semantic alignment in high-dimensional latent spaces. Experiments on CIFAR-10, CIFAR-100, and ImageNet-100 demonstrate VSSL's competitive or superior performance to leading self-supervised methods, offering a scalable, probabilistically grounded approach for transferable representation learning without generative reconstruction.",
+            "link": "https://arxiv.org/abs/2504.04318",
+            "codeLink": "https://github.com/convergedmachine/vssl-solo-learn",
+            "stars": "N/A",
+            "citationCount": "0",
+            "id": "scan-1763894246314-yol9uyrlr",
+            "isNew": false
+          },
+          {
+            "title": "A Probabilistic Model Behind Self-Supervised Learning",
+            "authors": "Alice Bizeul et al.",
+            "year": "2024",
+            "month": "Feb",
+            "day": "02",
+            "summary": "This paper proposes a generative latent variable model as a unifying theoretical framework for various discriminative self-supervised learning methods, explaining their underlying mechanisms and connections.",
+            "abstract": "The paper presents a generative latent variable model, termed the SSL Model, for self-supervised learning and shows that several families of discriminative SSL, including contrastive methods, induce a comparable distribution over representations, providing a unifying theoretical framework. It also introduces SimVAE, a VAE-based SSL method that maximizes the derived Evidence Lower Bound (ELBOSSL) and demonstrates improved performance on simple image benchmarks and narrows the gap between generative and discriminative representation learning. The proposed model justifies connections to mutual information and the use of a projection head, taking a step toward understanding self-supervised methods and achieving task-agnostic representations.",
+            "link": "https://arxiv.org/abs/2402.01399",
+            "codeLink": null,
+            "stars": "3",
+            "citationCount": "10",
+            "id": "scan-1763894246314-vnegz5nsh",
+            "isNew": false
+          },
+          {
+            "id": "simclr",
+            "title": "A Simple Framework for Contrastive Learning (SimCLR)",
+            "authors": "Chen et al. (Google)",
+            "year": "2020",
+            "month": "Feb",
+            "day": "13",
+            "summary": "Simplified contrastive learning by proving that strong data augmentation is the key to learning useful representations without labels.",
+            "abstract": "This paper presents SimCLR, a simple framework for contrastive learning of visual representations. We simplify recently proposed contrastive self-supervised learning algorithms without requiring specialized architectures or a memory bank. In order to learn useful representations, we show that (1) composition of data augmentations plays a critical role in defining effective predictive tasks, (2) introducing a learnable nonlinear transformation between the representation and the contrastive loss substantially improves the quality of the learned representations, and (3) contrastive learning benefits from larger batch sizes and more training steps compared to supervised learning. We demonstrate that a standard ResNet-50 trained using SimCLR achieves 76.5% top-1 accuracy on ImageNet, which is a 7% improvement over previous state-of-the-art, matching the performance of a supervised ResNet-50. When fine-tuned on only 1% of the labels, we achieve 85.8% top-5 accuracy, outperforming AlexNet with 100X fewer labels.",
+            "citationCount": "18,000+",
+            "stars": "6.2k",
+            "link": "https://arxiv.org/abs/2002.05709",
+            "codeLink": "https://github.com/google-research/simclr"
+          },
+          {
+            "id": "mae",
+            "title": "Masked Autoencoders Are Scalable Vision Learners (MAE)",
+            "authors": "He et al. (FAIR)",
+            "year": "2021",
+            "month": "Nov",
+            "day": "11",
+            "summary": "Demonstrated that masking a high percentage (75%) of images and reconstructing them scales distinctively better than contrastive methods.",
+            "abstract": "This paper shows that masked autoencoders (MAE) are scalable self-supervised learners for computer vision. Our MAE approach is simple: we mask random patches of the input image and reconstruct the missing pixels. Two core designs are based on this logic. First, we develop an asymmetric encoder-decoder architecture, with an encoder that operates only on the visible subset of patches (without mask tokens), and a lightweight decoder that reconstructs the original image from the latent representation and mask tokens. Second, we find that masking a high proportion of the input image, e.g., 75%, yields a nontrivial and meaningful self-supervisory task. Coupling these two designs enables us to train large models efficiently and effectively: we accelerate training (by 3x or more) and improve accuracy. Our scalable approach allows for learning high-capacity models that generalize well: e.g., a vanilla ViT-Huge model achieves the best accuracy (87.8%) among methods that use only ImageNet-1K data. Transfer performance in downstream tasks outperforms supervised pre-training and shows promising scaling behavior.",
+            "citationCount": "9,500+",
+            "stars": "8.4k",
+            "link": "https://arxiv.org/abs/2111.06377",
+            "codeLink": "https://github.com/facebookresearch/mae",
+            "comments": []
+          },
+          {
+            "id": "dino",
+            "title": "Emerging Properties in Self-Supervised Vision Transformers (DINO)",
+            "authors": "Caron et al. (FAIR)",
+            "year": "2021",
+            "month": "Apr",
+            "day": "29",
+            "summary": "Showed that self-supervised ViTs automatically learn class-specific attention maps (segmentation) without supervision.",
+            "abstract": "In this paper, we question whether self-supervised learning provides new properties to Vision Transformer (ViT) features that stand out compared to supervised ViT and convolutional networks. We make the following observations: (i) self-supervised ViT features contain explicit information about the semantic segmentation of an image, which does not emerge as clearly with supervised ViTs, nor with convolutional networks. (ii) these features are also excellent k-NN classifiers, reaching 78.3% top-1 on ImageNet with a small ViT-S/16. We underline the importance of momentum encoder, multi-crop training, and the use of small patches with ViTs. We implement our findings in a simple self-supervised method, called DINO, which we interpret as a form of self-distillation with no labels. We show the synergy between DINO and ViTs is key to the learned features quality.",
+            "citationCount": "4,000+",
+            "stars": "7.8k",
+            "link": "https://arxiv.org/abs/2104.14294",
+            "codeLink": "https://github.com/facebookresearch/dino",
+            "comments": []
+          }
+        ]
+      },
+      {
+        "id": "multimodal",
+        "title": "Multimodal Unification",
+        "description": "Bridging the gap between Vision and Language.",
+        "papers": [
+          {
+            "title": "Ming-Omni: A Unified Multimodal Model for Perception and Generation",
+            "authors": "Inclusion AI et al.",
+            "year": "2025",
+            "month": "June",
+            "day": "11",
+            "summary": "Ming-Omni is presented as the first open-source unified multimodal model capable of processing images, text, audio, and video, while demonstrating strong proficiency in both speech and image generation.",
+            "abstract": "Ming-Omni is a unified multimodal model that processes images, text, audio, and video using dedicated encoders and modality-specific routers within an MoE architecture. It achieves efficient processing and fusion of multimodal inputs, enabling diverse tasks without separate models or fine-tuning, and extends beyond conventional models by supporting audio and image generation through advanced decoders.",
+            "link": "https://arxiv.org/abs/2506.09344",
+            "codeLink": "https://github.com/inclusionai/ming",
+            "stars": "0",
+            "citationCount": "0",
+            "id": "scan-1763894348325-e7f3srjhm",
+            "isNew": false
+          },
+          {
+            "title": "Qwen2-VL: Enhancing Vision-Language Model's Perception of the World at Any Resolution",
+            "authors": "Peng Wang et al.",
+            "year": "2024",
+            "month": "September",
+            "day": "18",
+            "summary": "This paper introduces the Qwen2-VL Series, an advanced upgrade of previous Qwen-VL models, redefining visual processing with a Naive Dynamic Resolution mechanism for efficient and accurate visual representations.",
+            "abstract": "Qwen2-VL introduces the Naive Dynamic Resolution mechanism, which enables the model to dynamically process images of varying resolutions into different numbers of visual tokens, closely aligning with human perceptual processes. The model also integrates Multimodal Rotary Position Embedding (M-RoPE) for effective fusion of positional information across text, images, and videos, employing a unified paradigm for processing both images and videos to enhance visual perception capabilities.",
+            "link": "https://arxiv.org/abs/2409.12191",
+            "codeLink": "https://github.com/QwenLM/Qwen2-VL",
+            "stars": "0",
+            "citationCount": "0",
+            "id": "scan-1763894348325-n6s9y9vml",
+            "isNew": false
+          },
+          {
+            "id": "clip",
+            "title": "Learning Transferable Visual Models From Natural Language Supervision (CLIP)",
+            "authors": "Radford et al. (OpenAI)",
+            "year": "2021",
+            "month": "Feb",
+            "day": "26",
+            "summary": "Connected text and images via contrastive pre-training, enabling zero-shot classification on unseen datasets.",
+            "abstract": "State-of-the-art computer vision systems are trained to predict a fixed set of predetermined object categories. This restricted form of supervision limits their generality and usability since additional labeled data is needed to specify any other visual concept. We demonstrate that the simple pre-training task of predicting which caption goes with which image is an efficient and scalable way to learn SOTA image representations from scratch on a dataset of 400 million (image, text) pairs collected from the internet. After pre-training, natural language is used to reference learned visual concepts (or describe new ones) enabling zero-shot transfer of the model to downstream tasks. We study the performance of this approach by benchmarking on over 30 different existing computer vision datasets, spanning tasks such as OCR, action recognition in videos, geo-localization, and fine-grained object classification. The model transfers non-trivially to most tasks and is often competitive with a fully supervised baseline without the need for any dataset specific training.",
+            "citationCount": "14,000+",
+            "stars": "14k",
+            "link": "https://arxiv.org/abs/2103.00020",
+            "codeLink": "https://github.com/openai/CLIP"
+          }
+        ]
+      },
+      {
+        "id": "world_models",
+        "title": "World Models",
+        "description": "Internalizing the physics and dynamics of the environment.",
+        "papers": [
+          {
+            "id": "ijepa",
+            "title": "Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture (I-JEPA)",
+            "authors": "Assran et al. (Meta)",
+            "year": "2023",
+            "month": "Jan",
+            "day": "19",
+            "summary": "Proposed predicting latent representations of masked regions rather than pixels, moving towards abstract world modeling.",
+            "abstract": "This paper proposes I-JEPA, a non-generative approach for self-supervised learning from images. The idea behind I-JEPA is to predict the representations of various target blocks in the same image from a single context block. A crucial design choice is to operate in abstract representation space (predicting embeddings) rather than pixel space, which allows the model to learn high-level semantic features rather than low-level details. Empirically, I-JEPA learns strong off-the-shelf semantic representations without the use of hand-crafted data-augmentations. We show that I-JEPA scales efficiently with model size and data size. For example, with a ViT-Huge/14 trained on ImageNet-1K, I-JEPA achieves 87.1% linear probing accuracy and 45.7% semisupervised accuracy with 1% labels, outperforming previous methods.",
+            "citationCount": "800+",
+            "stars": "3.1k",
+            "link": "https://arxiv.org/abs/2301.08243",
+            "codeLink": "https://github.com/facebookresearch/ijepa"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "reasoning",
+    "title": "II. Intelligence & Reasoning",
+    "subtitle": "Emergence, Logic, and Cognition",
+    "color": "indigo",
+    "description": "How intelligence emerges from statistical prediction. Covering Chain-of-Thought, planning, and handling long contexts.",
+    "topics": [
+      {
+        "id": "cot",
+        "title": "Chain of Thought & Planning",
+        "description": "Unlocking reasoning by asking models to \"think step by step\".",
+        "papers": [
+          {
+            "id": "cot_paper",
+            "title": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
+            "authors": "Wei et al. (Google)",
+            "year": "2022",
+            "month": "Jan",
+            "day": "28",
+            "summary": "Discovered that generating intermediate reasoning steps significantly improves performance on complex math and logic tasks.",
+            "abstract": "We explore how generating a chain of thought—a series of intermediate reasoning steps—significantly improves the ability of large language models to perform complex reasoning. In particular, we show that such reasoning abilities emerge naturally in sufficiently large language models via a simple method called chain-of-thought prompting, where a few chain of thought demonstrations are provided as exemplars in prompting. Experiments on three large language models show that chain-of-thought prompting improves performance on a range of arithmetic, commonsense, and symbolic reasoning tasks. The empirical gains can be striking. For instance, prompting a PaLM 540B with just eight chain of thought exemplars achieves state-of-the-art accuracy on the GSM8K benchmark of math word problems, surpassing even finetuned GPT-3 with a code verifier.",
+            "citationCount": "8,000+",
+            "link": "https://arxiv.org/abs/2201.11903"
+          }
+        ]
+      },
+      {
+        "id": "long_context",
+        "title": "Long Context & Memory",
+        "description": "Handling massive information windows.",
+        "papers": [
+          {
+            "id": "rope",
+            "title": "RoFormer: Enhanced Transformer with Rotary Position Embedding",
+            "authors": "Su et al.",
+            "year": "2021",
+            "month": "Apr",
+            "day": "20",
+            "summary": "Introduced RoPE, the de-facto standard for positional encoding in modern LLMs (Llama, etc.) enabling better length extrapolation.",
+            "abstract": "We investigate the problem of encoding position information in Transformer-based language models. We propose Rotary Position Embedding (RoPE), a method that encodes absolute positional information with a rotation matrix and naturally incorporates explicit relative position dependency in self-attention formulation. RoPE enables valuable properties, including flexibility of sequence length, decaying inter-token dependency with increasing relative distances, and the capability of equipping linear self-attention with relative position encoding. We verify the efficacy of RoPE on various sequence-to-sequence tasks and show that RoPE outperforms existing positional encoding methods.",
+            "citationCount": "4,000+",
+            "stars": "2.5k",
+            "link": "https://arxiv.org/abs/2104.09864",
+            "codeLink": "https://github.com/ZhuiyiTechnology/roformer"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "agents",
+    "title": "III. Agents & Interaction",
+    "subtitle": "Autonomy, Tools, and Environment",
+    "color": "emerald",
+    "description": "Moving from passive chat to active agents. Includes Reinforcement Learning, Tool Use, and Autonomous Frameworks.",
+    "topics": [
+      {
+        "id": "tool_use",
+        "title": "Tool Use & Agents",
+        "description": "LLMs utilizing external APIs and execution environments.",
+        "papers": [
+          {
+            "id": "react",
+            "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+            "authors": "Yao et al. (Princeton/Google)",
+            "year": "2022",
+            "month": "Oct",
+            "day": "6",
+            "summary": "Interleaved reasoning traces with action execution, allowing models to dynamically correct plans and interact with APIs.",
+            "abstract": "While large language models (LLMs) have demonstrated impressive capabilities across tasks in language understanding and interactive decision making, their abilities for reasoning (e.g. chain-of-thought prompting) and acting (e.g. action plan generation) have primarily been studied as separate topics. In this paper, we explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner, allowing for greater synergy between the two: reasoning traces help the model induce, track, and update action plans as well as handle exceptions, while actions allow it to interface with external sources, such as knowledge bases or environments, to gather additional information. We apply our approach, ReAct, to a diverse set of language and decision making tasks and demonstrate its effectiveness over state-of-the-art baselines.",
+            "citationCount": "2,800+",
+            "stars": "4.1k",
+            "link": "https://arxiv.org/abs/2210.03629",
+            "codeLink": "https://github.com/ysymyth/ReAct"
+          },
+          {
+            "id": "voyager",
+            "title": "Voyager: An Open-Ended Embodied Agent with Large Language Models",
+            "authors": "Wang et al. (NVIDIA)",
+            "year": "2023",
+            "month": "May",
+            "day": "25",
+            "summary": "First LLM-powered agent to play Minecraft continuously by writing its own code skills and maintaining a skill library.",
+            "abstract": "We introduce Voyager, the first LLM-powered embodied lifelong learning agent in Minecraft that continuously explores the world, acquires diverse skills, and makes novel discoveries without human intervention. Voyager consists of three key components: 1) an automatic curriculum that maximizes exploration, 2) an ever-growing skill library of executable code for storing and retrieving complex behaviors, and 3) a new iterative prompting mechanism that incorporates environment feedback, execution errors, and self-verification for program improvement. Voyager interacts with GPT-4 via blackbox queries, which bypasses the need for model parameter fine-tuning. The skills developed by Voyager are temporally extended, interpretable, and compositional, which allows the agent's abilities to grow rapidly and alleviates catastrophic forgetting.",
+            "citationCount": "1,100+",
+            "stars": "5.9k",
+            "link": "https://arxiv.org/abs/2305.16291",
+            "codeLink": "https://github.com/MineDojo/Voyager"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "safety",
+    "title": "IV. Safety & Alignment",
+    "subtitle": "Trust, Robustness, and Human Values",
+    "color": "rose",
+    "description": "Ensuring AI systems are helpful, honest, and harmless. Techniques for control and interpreting black boxes.",
+    "topics": [
+      {
+        "id": "alignment",
+        "title": "Value Alignment",
+        "description": "Aligning objective functions with human intent.",
+        "papers": [
+          {
+            "id": "rlhf",
+            "title": "Deep Reinforcement Learning from Human Preferences",
+            "authors": "Christiano et al. (OpenAI/DeepMind)",
+            "year": "2017",
+            "month": "Jun",
+            "day": "12",
+            "summary": "The foundational paper for RLHF. Showed how to train agents using simple human feedback (A vs B) rather than complex reward functions.",
+            "abstract": "For sophisticated reinforcement learning (RL) systems to interact usefully with real-world environments, we need to communicate complex goals to these systems. In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments. We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion. Our results show that a small amount of human feedback (less than 1%) is sufficient to solve these tasks, and that we can even learn from human feedback that is less accurate than the optimal reward function.",
+            "citationCount": "4,500+",
+            "link": "https://arxiv.org/abs/1706.03741"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "efficiency",
+    "title": "V. Efficiency & Scaling",
+    "subtitle": "Faster, Smaller, Cheaper",
+    "color": "amber",
+    "description": "The engineering marvels behind the models. Scaling laws, optimization, and compression.",
+    "topics": [
+      {
+        "id": "scaling_laws",
+        "title": "Scaling Laws",
+        "description": "The physics of AI model growth.",
+        "papers": [
+          {
+            "title": "Characterizing the effects of data scaling in deep learning",
+            "authors": "Alon Gordon et al.",
+            "link": "https://arxiv.org/abs/2106.07548",
+            "year": "2021",
+            "month": "Jun",
+            "day": "14",
+            "summary": "This study systematically characterizes how increasing training data impacts the performance and generalization of deep learning models across various tasks and architectures, identifying key scaling relationships.",
+            "abstract": "The amount of training data is a crucial factor influencing the performance of deep learning models. While it is generally understood that more data leads to better models, the precise nature of this relationship, particularly across different data regimes and model complexities, is not fully characterized. This paper presents a systematic empirical investigation into the effects of data scaling on deep learning model performance. We analyze how accuracy, generalization, and training dynamics are influenced by varying the size of the training dataset, identifying power-law relationships that govern these behaviors. Our findings provide practical guidelines for data collection strategies and highlight the importance of understanding data-centric scaling laws for efficient and effective deep learning development.",
+            "codeLink": "",
+            "stars": "N/A",
+            "citationCount": "1,180",
+            "id": "scan-1763901173693-y4t16tlpn",
+            "isNew": false
+          },
+          {
+            "title": "Emergent Abilities of Large Language Models",
+            "authors": "Jason Wei et al.",
+            "link": "https://arxiv.org/abs/2206.07613",
+            "year": "2022",
+            "month": "Oct",
+            "day": "31",
+            "summary": "This paper identifies \"emergent abilities\" in large language models that are not present in smaller models but appear abruptly at a certain scale, suggesting qualitative shifts in model behavior.",
+            "abstract": "We identify emergent abilities of large language models (LLMs), which are abilities that are not present in smaller models but arise in larger models. Emergent abilities cannot be predicted from the performance of smaller models, making it difficult to extrapolate the capabilities of future models by simply scaling up existing ones. We examine a diverse set of tasks and find that emergent abilities appear across different modalities and model architectures. This phenomenon suggests that scaling is not merely a quantitative improvement but can lead to qualitative shifts in model behavior and functionality. We discuss the implications of emergent abilities for understanding and developing advanced AI systems, highlighting the need for new evaluation methodologies for increasingly capable models.",
+            "codeLink": "",
+            "stars": "25.6k",
+            "citationCount": "5,306+",
+            "id": "scan-1763901173693-elzctfwcb",
+            "isNew": false
+          },
+          {
+            "title": "Scaling laws for transfer learning",
+            "authors": "Xiaohua Lu et al.",
+            "link": "https://arxiv.org/abs/2206.07221",
+            "year": "2022",
+            "month": "Jun",
+            "day": "15",
+            "summary": "This paper explores how performance in transfer learning scenarios scales with model capacity, dataset size, and source-target domain similarity, revealing predictable power-law relationships.",
+            "abstract": "Transfer learning is a powerful paradigm for improving performance on target tasks by leveraging knowledge from related source tasks. However, the optimal strategies for transfer learning, especially concerning resource allocation, remain an open question. In this work, we empirically investigate scaling laws for transfer learning, analyzing how downstream performance is affected by factors such as pre-training data size, model size, and the amount of target-specific data. We find that predictable power-law scaling relationships hold in various transfer learning settings, providing insights into when and how to effectively scale up models and data for optimal transfer performance. Our findings suggest that there are optimal trade-offs between pre-training and fine-tuning resources, dependent on the similarity between source and target domains.",
+            "codeLink": "",
+            "stars": "N/A",
+            "citationCount": "N/A",
+            "id": "scan-1763901173693-mdmhc6piw",
+            "isNew": false
+          },
+          {
+            "title": "Deep Learning Scaling Laws",
+            "authors": "Joel Hestness et al.",
+            "link": "https://arxiv.org/abs/1712.00409",
+            "year": "2017",
+            "month": "Dec",
+            "day": "01",
+            "summary": "This paper investigates how the performance of deep learning models scales with increased computational resources, dataset size, and model capacity across various tasks and domains.",
+            "abstract": "Deep learning models are achieving state-of-the-art results across a variety of tasks, but their development is often slowed by the difficulty of choosing an appropriate model and training setup. Here we explore the empirical scaling of deep learning models in terms of accuracy as a function of compute and data. We demonstrate that model quality improves predictably as more compute and data are applied, following power-law relationships. These scaling laws hold across different domains (vision, language, speech) and model architectures, suggesting general principles for designing and training deep learning models. We characterize how different hyperparameters affect these scaling laws and discuss implications for future research and practical deployment of deep learning systems.",
+            "codeLink": "",
+            "stars": "N/A",
+            "citationCount": "842+",
+            "id": "scan-1763901173693-5hpxtefcv",
+            "isNew": false
+          },
+          {
+            "title": "Scaling Laws for Neural Language Models",
+            "authors": "Jared Kaplan et al.",
+            "link": "https://arxiv.org/abs/2001.08361",
+            "year": "2020",
+            "month": "Jan",
+            "day": "23",
+            "summary": "This foundational paper empirically demonstrates that the performance of large language models follows predictable power-law scaling relationships with model size, dataset size, and training compute.",
+            "abstract": "Modern neural language models contain hundreds of millions to billions of parameters, and their performance scales predictably with model size, dataset size, and the amount of computation used for training. Here we present an empirical study of these scaling laws for Transformer language models. We find that performance (measured by cross-entropy loss) scales as a power-law with model size N, dataset size D, and the amount of computation C, with exponents that are surprisingly stable across a wide range of model architectures and training methodologies. The primary conclusion is that larger models are significantly more sample-efficient, achieving the same performance with far less data than smaller models. We also explore the implications of these scaling laws for optimizing model training and suggest that current large language models are significantly undertrained.",
+            "codeLink": "",
+            "stars": "49",
+            "citationCount": "6,224+",
+            "id": "scan-1763901173693-2s0n0cw7g",
+            "isNew": false
+          },
+          {
+            "id": "chinchilla",
+            "title": "Training Compute-Optimal Large Language Models (Chinchilla)",
+            "authors": "Hoffmann et al. (DeepMind)",
+            "year": "2022",
+            "month": "Mar",
+            "day": "29",
+            "summary": "Proved that most models were under-trained. Established the optimal ratio of model size to training tokens.",
+            "abstract": "We investigate the optimal model size and number of tokens for training a transformer language model under a given compute budget. We find that for compute-optimal training, the model size and the number of training tokens should be scaled equally: for every doubling of model size the number of training tokens should also be doubled. Testing this hypothesis, we train Chinchilla, a 70B parameter model that significantly outperforms Gopher (280B), GPT-3 (175B), Jurassic-1 (178B), and Megatron-Turing NLG (530B) on a large range of downstream evaluation tasks. This also means that Chinchilla uses substantially less compute for fine-tuning and inference, greatly facilitating downstream usage.",
+            "citationCount": "2,465+",
+            "link": "https://arxiv.org/abs/2203.15556",
+            "stars": "51 (for a related toolkit)"
+          }
+        ]
+      },
+      {
+        "id": "optimization",
+        "title": "Architecture Optimization",
+        "description": "Hardware-aware algorithms.",
+        "papers": [
+          {
+            "id": "1763900947770",
+            "title": "Attention Is All You Need",
+            "authors": "Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, Illia Polosukhin",
+            "year": "2017",
+            "month": "Jun",
+            "day": "12",
+            "summary": "We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.",
+            "abstract": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks in an encoder-decoder configuration. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.",
+            "link": "https://arxiv.org/abs/1706.03762",
+            "codeLink": "https://github.com/tensorflow/tensor2tensor",
+            "citationCount": "214,888+",
+            "stars": "16k",
+            "isNew": false
+          },
+          {
+            "id": "flashattn",
+            "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+            "authors": "Dao et al. (Stanford)",
+            "year": "2022",
+            "month": "May",
+            "day": "27",
+            "summary": "Optimized GPU memory IO, speeding up attention mechanisms by 2-4x and enabling much longer context windows.",
+            "abstract": "Transformers are slow and memory-hungry on long sequences, mainly because of the quadratic time and memory complexity of self-attention. We propose FlashAttention, an IO-aware exact attention algorithm that uses tiling to reduce the number of memory reads/writes between GPU HBM and on-chip SRAM. We also analyze the IO complexity of FlashAttention, showing that it requires linear number of HBM accesses w.r.t. sequence length, which is standard attention. We also extend FlashAttention to block-sparse attention, yielding an approximate attention algorithm that is faster than any existing approximate attention method.",
+            "citationCount": "3,200+",
+            "stars": "11.5k",
+            "link": "https://arxiv.org/abs/2205.14135",
+            "codeLink": "https://github.com/HazyResearch/flash-attention"
+          }
+        ]
+      }
+    ]
+  }
+]
