@@ -11,10 +11,9 @@ declare global {
 }
 
 const isNativeAPISupported = () => {
-    // Robust check: must be secure context AND function must exist
-    return typeof window !== 'undefined' &&
-        window.isSecureContext === true &&
-        typeof window.showOpenFilePicker === 'function';
+    // Desktop shells (Electron/Tauri) often lack isSecureContext but still expose pickers.
+    if (typeof window === 'undefined') return false;
+    return typeof window.showOpenFilePicker === 'function';
 };
 
 /**
@@ -325,6 +324,32 @@ export const saveFileHandleToIndexedDB = async (handle: FileSystemFileHandle, ke
 /**
  * Retrieves a file handle from IndexedDB
  */
+const ensureHandlePermission = async (handle: FileSystemFileHandle, mode: 'read' | 'readwrite' = 'readwrite'): Promise<boolean> => {
+    if (!isNativeAPISupported()) return false;
+
+    try {
+        const queryPermission = (handle as any).queryPermission as ((options?: { mode?: 'read' | 'readwrite' }) => Promise<PermissionState>) | undefined;
+        const requestPermission = (handle as any).requestPermission as ((options?: { mode?: 'read' | 'readwrite' }) => Promise<PermissionState>) | undefined;
+
+        if (typeof queryPermission === 'function') {
+            const query = await queryPermission.call(handle, { mode });
+            if (query === 'granted') return true;
+            if (query === 'denied' && typeof requestPermission !== 'function') return false;
+        }
+
+        if (typeof requestPermission === 'function') {
+            const request = await requestPermission.call(handle, { mode });
+            return request === 'granted';
+        }
+
+        // If permission APIs are unavailable, assume success (legacy implementations)
+        return true;
+    } catch (err) {
+        console.warn('Permission check failed for file handle:', err);
+        return false;
+    }
+};
+
 export const getFileHandleFromIndexedDB = async (key: string = 'knowledge-base'): Promise<FileSystemFileHandle | null> => {
     if (!isNativeAPISupported()) {
         return null;
@@ -337,10 +362,18 @@ export const getFileHandleFromIndexedDB = async (key: string = 'knowledge-base')
         const request = store.get(key);
 
         return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
+            request.onsuccess = async () => {
                 const handle = request.result;
                 if (handle) {
-                    // Verify the handle is still valid by checking if we can get the file
+                    const hasPermission = await ensureHandlePermission(handle, 'readwrite');
+                    if (!hasPermission) {
+                        console.warn('File handle permissions not granted, removing handle');
+                        const deleteTransaction = db.transaction(STORE_NAME, 'readwrite');
+                        deleteTransaction.objectStore(STORE_NAME).delete(key);
+                        resolve(null);
+                        return;
+                    }
+
                     handle.getFile().then(() => {
                         console.log('✅ File handle restored from IndexedDB');
                         resolve(handle);

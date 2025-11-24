@@ -94,6 +94,8 @@ export interface FileSystemFileHandle extends FileSystemHandle {
   kind: 'file';
   getFile(): Promise<File>;
   createWritable(options?: any): Promise<FileSystemWritableFileStream>;
+  queryPermission?(options?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>;
+  requestPermission?(options?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>;
 }
 
 export interface FileSystemWritableFileStream extends WritableStream {

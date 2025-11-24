@@ -159,13 +159,15 @@ export const MODEL_CONFIGS: Record<AIModel, ModelConfig> = {
 
 class GeminiProvider implements AIProvider {
     private apiKey: string;
+    private defaultModel: string;  // 保存创建时使用的模型
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, defaultModel: string = 'gemini-2.5-flash') {
         this.apiKey = apiKey;
+        this.defaultModel = defaultModel;  // 保存模型，支持 gemini-3-pro, gemini-2.5-flash, gemini-2.0-flash
     }
 
     async generateContent(options: GenerateContentOptions): Promise<GenerateContentResponse> {
-        const { prompt, model = 'gemini-2.5-flash', tools, systemInstruction } = options;
+        const { prompt, model = this.defaultModel, tools, systemInstruction } = options;  // 使用保存的模型作为默认值
 
         const ai = new GoogleGenAI({ apiKey: this.apiKey });
 
@@ -173,18 +175,82 @@ class GeminiProvider implements AIProvider {
         if (tools && tools.length > 0) {
             config.tools = tools;
         }
-        if (systemInstruction) {
-            config.systemInstruction = systemInstruction;
-        }
+        // 关键修改：不再将systemInstruction作为config项
+        // 原因：Gemini会将config.systemInstruction视为更高优先级，导致prompt中的详细指令（如标题-链接匹配）被弱化
+        // 解决方案：将systemInstruction合并到prompt中，确保所有指令同等重要（恢复到v1版本的行为）
+        // if (systemInstruction) {
+        //     config.systemInstruction = systemInstruction;
+        // }
+
+        // 将systemInstruction合并到prompt开头，确保所有指令同等重要
+        // 这样既保持了JSON格式要求，又不会弱化标题-链接匹配的详细指令
+        const fullPrompt = systemInstruction
+            ? `${systemInstruction}\n\n---\n\n${prompt}`
+            : prompt;
 
         const response = await ai.models.generateContent({
             model: model as string,
-            contents: prompt,
-            config,
+            contents: fullPrompt,  // 使用合并后的prompt
+            config,  // config中不再包含systemInstruction
         });
 
+        // Try multiple methods to extract text from response
+        let responseText = response.text || '';
+
+        // If response.text is empty but we have candidates, try to extract from candidates
+        if (!responseText && response.candidates && response.candidates.length > 0) {
+            const candidate = response.candidates[0];
+
+            // Check finishReason to understand why text might be empty
+            const finishReason = candidate.finishReason;
+
+            // Try to extract text from content.parts
+            if (candidate.content && candidate.content.parts) {
+                const textParts = candidate.content.parts
+                    .filter((part: any) => part.text)
+                    .map((part: any) => part.text)
+                    .join('');
+                if (textParts) {
+                    responseText = textParts;
+                }
+            }
+
+            // If still empty, check finishReason and log detailed info
+            if (!responseText) {
+                console.error('Gemini API returned empty response:', {
+                    model,
+                    hasCandidates: !!response.candidates,
+                    candidatesLength: response.candidates?.length,
+                    finishReason: finishReason || 'UNKNOWN',
+                    candidate: candidate,
+                    safetyRatings: candidate.safetyRatings,
+                    content: candidate.content
+                });
+
+                if (finishReason === 'SAFETY') {
+                    throw new Error('AI response was blocked by safety filters. Please try rephrasing your query or check the content.');
+                } else if (finishReason === 'MAX_TOKENS') {
+                    throw new Error('AI response was cut off due to token limit. Please try a shorter query.');
+                } else if (finishReason === 'RECITATION') {
+                    throw new Error('AI response was blocked due to recitation policy. Please try a different query.');
+                } else {
+                    throw new Error(`AI returned empty response. Finish reason: ${finishReason || 'UNKNOWN'}. This may be due to content filtering, API limits, or model issues. Please try again or check your API key.`);
+                }
+            }
+        }
+
+        if (!responseText || responseText.trim().length === 0) {
+            console.error('Gemini API returned empty response:', {
+                model,
+                hasCandidates: !!response.candidates,
+                candidatesLength: response.candidates?.length,
+                candidates: response.candidates
+            });
+            throw new Error('AI returned empty response. This may be due to content filtering, API limits, or model issues. Please try again or check your API key.');
+        }
+
         return {
-            text: response.text,
+            text: responseText,
             candidates: response.candidates,
             groundingMetadata: response.candidates?.[0]?.groundingMetadata,
         };
@@ -193,7 +259,7 @@ class GeminiProvider implements AIProvider {
     createChat(options: { model?: AIModel; config?: { systemInstruction?: string } }) {
         const ai = new GoogleGenAI({ apiKey: this.apiKey });
         return ai.chats.create({
-            model: (options.model || 'gemini-2.5-flash') as string,
+            model: (options.model || this.defaultModel) as string,  // 使用保存的模型作为默认值
             config: options.config || {},
         });
     }
@@ -252,8 +318,21 @@ class OpenAIProvider implements AIProvider {
         }
 
         const data = await response.json();
+        const responseText = data.choices[0]?.message?.content || '';
+
+        if (!responseText || responseText.trim().length === 0) {
+            console.error('OpenAI API returned empty response:', {
+                model,
+                hasChoices: !!data.choices,
+                choicesLength: data.choices?.length,
+                choices: data.choices,
+                finishReason: data.choices?.[0]?.finish_reason
+            });
+            throw new Error('AI returned empty response. This may be due to content filtering, API limits, or model issues. Please try again or check your API key.');
+        }
+
         return {
-            text: data.choices[0]?.message?.content || '',
+            text: responseText,
             candidates: data.choices,
         };
     }
@@ -295,8 +374,21 @@ class AnthropicProvider implements AIProvider {
         }
 
         const data = await response.json();
+        const responseText = data.content[0]?.text || '';
+
+        if (!responseText || responseText.trim().length === 0) {
+            console.error('Anthropic API returned empty response:', {
+                model,
+                hasContent: !!data.content,
+                contentLength: data.content?.length,
+                content: data.content,
+                stopReason: data.stop_reason
+            });
+            throw new Error('AI returned empty response. This may be due to content filtering, API limits, or model issues. Please try again or check your API key.');
+        }
+
         return {
-            text: data.content[0]?.text || '',
+            text: responseText,
             candidates: data.content,
         };
     }
@@ -323,11 +415,19 @@ class QwenProvider implements AIProvider {
         // Use the model from options, or fall back to the default model set in constructor
         const modelName = model || this.defaultModel;
 
+        // 关键修改：不再将systemInstruction作为独立的system message
+        // 原因：system message可能被视为更高优先级，导致prompt中的详细指令（如标题-链接匹配）被弱化
+        // 解决方案：将systemInstruction合并到prompt中，确保所有指令同等重要（与Gemini保持一致）
+        const fullPrompt = systemInstruction
+            ? `${systemInstruction}\n\n---\n\n${prompt}`
+            : prompt;
+
         const messages: any[] = [];
-        if (systemInstruction) {
-            messages.push({ role: 'system', content: systemInstruction });
-        }
-        messages.push({ role: 'user', content: prompt });
+        // 移除独立的system message，改为合并到user message中
+        // if (systemInstruction) {
+        //     messages.push({ role: 'system', content: systemInstruction });
+        // }
+        messages.push({ role: 'user', content: fullPrompt });  // 使用合并后的prompt
 
         // Build request body
         const requestBody: any = {
@@ -371,8 +471,21 @@ class QwenProvider implements AIProvider {
         const data = await response.json();
 
         // OpenAI-compatible format: data.choices[0].message.content
+        const responseText = data.choices?.[0]?.message?.content || '';
+
+        if (!responseText || responseText.trim().length === 0) {
+            console.error('Qwen API returned empty response:', {
+                model: modelName,
+                hasChoices: !!data.choices,
+                choicesLength: data.choices?.length,
+                choices: data.choices,
+                finishReason: data.choices?.[0]?.finish_reason
+            });
+            throw new Error('AI returned empty response. This may be due to content filtering, API limits, or model issues. Please try again or check your API key.');
+        }
+
         return {
-            text: data.choices?.[0]?.message?.content || '',
+            text: responseText,
             candidates: data.choices || [],
         };
     }
@@ -420,8 +533,21 @@ class GrokProvider implements AIProvider {
         }
 
         const data = await response.json();
+        const responseText = data.choices[0]?.message?.content || '';
+
+        if (!responseText || responseText.trim().length === 0) {
+            console.error('Grok API returned empty response:', {
+                model,
+                hasChoices: !!data.choices,
+                choicesLength: data.choices?.length,
+                choices: data.choices,
+                finishReason: data.choices?.[0]?.finish_reason
+            });
+            throw new Error('AI returned empty response. This may be due to content filtering, API limits, or model issues. Please try again or check your API key.');
+        }
+
         return {
-            text: data.choices[0]?.message?.content || '',
+            text: responseText,
             candidates: data.choices || [],
         };
     }
@@ -458,7 +584,7 @@ export function getAIProvider(model?: AIModel): AIProvider {
     let provider: AIProvider;
     switch (config.provider) {
         case 'gemini':
-            provider = new GeminiProvider(apiKey);
+            provider = new GeminiProvider(apiKey, selectedModel);  // 传递模型信息，支持所有Gemini模型
             break;
         case 'openai':
             provider = new OpenAIProvider(apiKey);

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Pillar, Paper, Topic, Comment } from './types';
 import * as fileSystem from './fileSystem';
-import { getAiFillPrompt, getFindPapersPrompt, getRefreshStatsPrompt } from './prompts';
-import { getAIProvider } from './aiProvider';
+import { getAiFillPrompt, getFindPapersPrompt, getRefreshStatsPrompt } from '../prompts';
+import { getAIProvider, getSelectedModel } from './aiProvider';
 
 interface Props {
     pillar: Pillar;
@@ -21,34 +21,89 @@ interface Props {
     userName: string;
 }
 
-// Enhanced Robust JSON Parser Helper
-const parseJSON = (text: string) => {
-    if (!text) return null;
+// Enhanced Robust JSON Parser Helper with better error reporting
+const parseJSON = (text: string): { data: any; error: string | null } => {
+    if (!text || !text.trim()) {
+        return { data: null, error: 'Empty response from AI' };
+    }
+
     try {
         // Strategy 1: Try parsing strictly first (fastest)
         try {
-            return JSON.parse(text);
+            const parsed = JSON.parse(text);
+            return { data: parsed, error: null };
         } catch (e) {
             // Continue to cleaning strategies
         }
 
         let cleanText = text;
 
-        // Strategy 2: Extract from Markdown code blocks
-        const jsonBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        // Strategy 2: Extract from Markdown code blocks (handle multiple formats)
+        const jsonBlockMatch = text.match(/```(?:json|javascript)?\s*([\s\S]*?)\s*```/);
         if (jsonBlockMatch && jsonBlockMatch[1]) {
-            cleanText = jsonBlockMatch[1];
-        } else {
-            // Strategy 3: Brute force find the first '[' or '{' and last ']' or '}'
-            const firstCurly = text.indexOf('{');
-            const firstSquare = text.indexOf('[');
-            const start = (firstCurly !== -1 && (firstSquare === -1 || firstCurly < firstSquare)) ? firstCurly : firstSquare;
+            cleanText = jsonBlockMatch[1].trim();
+            try {
+                return { data: JSON.parse(cleanText), error: null };
+            } catch (e) {
+                // Continue to more aggressive cleaning
+            }
+        }
 
-            const lastCurly = text.lastIndexOf('}');
-            const lastSquare = text.lastIndexOf(']');
-            const end = Math.max(lastCurly, lastSquare);
+        // Strategy 3: Find JSON array/object boundaries more intelligently
+        // Look for the first complete JSON structure
+        const arrayStart = text.indexOf('[');
+        const objectStart = text.indexOf('{');
 
-            if (start !== -1 && end !== -1) {
+        let start = -1;
+        let isArray = false;
+
+        if (arrayStart !== -1 && (objectStart === -1 || arrayStart < objectStart)) {
+            start = arrayStart;
+            isArray = true;
+        } else if (objectStart !== -1) {
+            start = objectStart;
+            isArray = false;
+        }
+
+        if (start !== -1) {
+            // Find the matching closing bracket/brace
+            let depth = 0;
+            let inString = false;
+            let escapeNext = false;
+            let end = start;
+
+            for (let i = start; i < text.length; i++) {
+                const char = text[i];
+
+                if (escapeNext) {
+                    escapeNext = false;
+                    continue;
+                }
+
+                if (char === '\\') {
+                    escapeNext = true;
+                    continue;
+                }
+
+                if (char === '"') {
+                    inString = !inString;
+                    continue;
+                }
+
+                if (inString) continue;
+
+                if ((isArray && char === '[') || (!isArray && char === '{')) {
+                    depth++;
+                } else if ((isArray && char === ']') || (!isArray && char === '}')) {
+                    depth--;
+                    if (depth === 0) {
+                        end = i;
+                        break;
+                    }
+                }
+            }
+
+            if (end > start) {
                 cleanText = text.substring(start, end + 1);
             }
         }
@@ -64,78 +119,231 @@ const parseJSON = (text: string) => {
         // Fix single quotes to double quotes (but preserve escaped quotes)
         cleanText = cleanText.replace(/([{,]\s*)'([^']*)'(\s*[:,\]}])/g, '$1"$2"$3');
 
-        // Fix unescaped newlines in strings (replace with \n)
-        cleanText = cleanText.replace(/"([^"]*)"([^:]*):/g, (match, content, rest) => {
-            // Only fix if it's a string value (not a key)
-            if (rest.includes(':')) {
-                const fixedContent = content.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
-                return `"${fixedContent}"${rest}:`;
-            }
+        // Fix unescaped newlines and control characters in string values
+        // This is more careful - only fix strings that are values, not keys
+        cleanText = cleanText.replace(/"([^"]*)"\s*:/g, (match, key) => {
+            // This is a key, leave it alone
             return match;
         });
 
-        // Fix unescaped quotes in strings
-        cleanText = cleanText.replace(/"([^"]*)"([^:]*):/g, (match, content, rest) => {
-            if (rest.includes(':')) {
-                const fixedContent = content.replace(/"/g, '\\"');
-                return `"${fixedContent}"${rest}:`;
-            }
-            return match;
+        // Fix unescaped quotes and newlines in string values (after the colon)
+        cleanText = cleanText.replace(/:\s*"([^"]*)"([,\]}])/g, (match, value, ending) => {
+            // Escape quotes and newlines in the value
+            const fixedValue = value
+                .replace(/\\/g, '\\\\')  // Escape backslashes first
+                .replace(/"/g, '\\"')    // Escape quotes
+                .replace(/\n/g, '\\n')   // Escape newlines
+                .replace(/\r/g, '\\r')   // Escape carriage returns
+                .replace(/\t/g, '\\t');  // Escape tabs
+            return `: "${fixedValue}"${ending}`;
         });
 
-        // Remove any remaining control characters except those that are valid in JSON
-        cleanText = cleanText.replace(/[\x00-\x1F\x7F]/g, '');
+        // Remove any remaining problematic control characters (but keep valid whitespace)
+        cleanText = cleanText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
         cleanText = cleanText.trim();
 
-        return JSON.parse(cleanText);
-    } catch (e) {
-        // Last resort: Try to extract and fix partial JSON
         try {
-            // Try to find and extract a valid JSON object/array even if incomplete
-            const objMatch = text.match(/\{[\s\S]*\}/);
-            const arrMatch = text.match(/\[[\s\S]*\]/);
+            return { data: JSON.parse(cleanText), error: null };
+        } catch (parseError: any) {
+            // Last resort: Try to extract and fix partial JSON
+            try {
+                // Try to find and extract a valid JSON object/array even if incomplete
+                const objMatch = cleanText.match(/\{[\s\S]*\}/);
+                const arrMatch = cleanText.match(/\[[\s\S]*\]/);
 
-            if (objMatch || arrMatch) {
-                let partialText = objMatch ? objMatch[0] : arrMatch![0];
-                // Apply aggressive cleanup
-                partialText = partialText.replace(/\/\/.*?$/gm, '');
-                partialText = partialText.replace(/\/\*[\s\S]*?\*\//g, '');
-                partialText = partialText.replace(/,(\s*[}\]])/g, '$1');
-                partialText = partialText.replace(/([{,]\s*)'([^']*)'(\s*[:,\]}])/g, '$1"$2"$3');
+                if (objMatch || arrMatch) {
+                    let partialText = objMatch ? objMatch[0] : arrMatch![0];
+                    // Apply aggressive cleanup
+                    partialText = partialText.replace(/\/\/.*?$/gm, '');
+                    partialText = partialText.replace(/\/\*[\s\S]*?\*\//g, '');
+                    partialText = partialText.replace(/,(\s*[}\]])/g, '$1');
+                    partialText = partialText.replace(/([{,]\s*)'([^']*)'(\s*[:,\]}])/g, '$1"$2"$3');
 
-                // Try to close unclosed brackets
-                const openBraces = (partialText.match(/\{/g) || []).length;
-                const closeBraces = (partialText.match(/\}/g) || []).length;
-                const openBrackets = (partialText.match(/\[/g) || []).length;
-                const closeBrackets = (partialText.match(/\]/g) || []).length;
+                    // Try to close unclosed brackets
+                    const openBraces = (partialText.match(/\{/g) || []).length;
+                    const closeBraces = (partialText.match(/\}/g) || []).length;
+                    const openBrackets = (partialText.match(/\[/g) || []).length;
+                    const closeBrackets = (partialText.match(/\]/g) || []).length;
 
-                if (openBraces > closeBraces) {
-                    partialText += '}'.repeat(openBraces - closeBraces);
+                    if (openBraces > closeBraces) {
+                        partialText += '}'.repeat(openBraces - closeBraces);
+                    }
+                    if (openBrackets > closeBrackets) {
+                        partialText += ']'.repeat(openBrackets - closeBrackets);
+                    }
+
+                    const parsed = JSON.parse(partialText);
+                    return { data: parsed, error: null };
                 }
-                if (openBrackets > closeBrackets) {
-                    partialText += ']'.repeat(openBrackets - closeBrackets);
-                }
-
-                return JSON.parse(partialText);
+            } catch (e2) {
+                // Final failure
+                const errorMsg = `JSON parse failed: ${parseError?.message || 'Unknown error'}. First 200 chars: ${text.substring(0, 200)}`;
+                console.error("JSON Parse Failed:", errorMsg, parseError);
+                return { data: null, error: errorMsg };
             }
-        } catch (e2) {
-            console.error("JSON Parse Failed. Raw Text:", text.substring(0, 500), e);
         }
-        return null;
+    } catch (e: any) {
+        const errorMsg = `Unexpected error during JSON parsing: ${e?.message || 'Unknown error'}`;
+        console.error("JSON Parse Error:", errorMsg, e);
+        return { data: null, error: errorMsg };
+    }
+
+    return { data: null, error: 'Could not extract JSON from response' };
+};
+
+// Helper function to verify title-link match by actually fetching the link
+const verifyTitleLinkMatch = async (title: string, link: string): Promise<{ matches: boolean; error?: string; extractedTitle?: string }> => {
+    if (!link || link === '#' || !link.startsWith('http')) {
+        return { matches: false, error: 'Invalid link' };
+    }
+
+    try {
+        // Use CORS proxy to fetch the link
+        const proxyUrl = 'https://corsproxy.io/?';
+        const response = await fetch(proxyUrl + encodeURIComponent(link), {
+            method: 'GET',
+            headers: {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            },
+            // Set timeout
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
+
+        if (!response.ok) {
+            return { matches: false, error: `Failed to fetch link: ${response.status}` };
+        }
+
+        const html = await response.text();
+
+        // Extract title from HTML
+        // Try multiple methods to find the paper title
+        let extractedTitle = '';
+
+        // Method 1: Look for <title> tag
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        if (titleMatch) {
+            extractedTitle = titleMatch[1].trim();
+        }
+
+        // Method 2: Look for meta property="og:title"
+        if (!extractedTitle) {
+            const ogTitleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
+            if (ogTitleMatch) {
+                extractedTitle = ogTitleMatch[1].trim();
+            }
+        }
+
+        // Method 3: Look for ArXiv-specific title (in <h1 class="title">)
+        if (!extractedTitle && link.includes('arxiv.org')) {
+            const arxivTitleMatch = html.match(/<h1[^>]*class=["']title["'][^>]*>([^<]+)<\/h1>/i);
+            if (arxivTitleMatch) {
+                extractedTitle = arxivTitleMatch[1].trim();
+            }
+        }
+
+        // Method 4: Look for Semantic Scholar title (in data-testid="paper-title" or similar)
+        if (!extractedTitle && link.includes('semanticscholar.org')) {
+            const ssTitleMatch = html.match(/<h1[^>]*data-testid=["']paper-title["'][^>]*>([^<]+)<\/h1>/i) ||
+                html.match(/<span[^>]*class=["'][^"']*title[^"']*["'][^>]*>([^<]+)<\/span>/i);
+            if (ssTitleMatch) {
+                extractedTitle = ssTitleMatch[1].trim();
+            }
+        }
+
+        // Clean extracted title (remove HTML entities, extra whitespace)
+        extractedTitle = extractedTitle
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (!extractedTitle) {
+            return { matches: false, error: 'Could not extract title from page' };
+        }
+
+        // Normalize titles for comparison (lowercase, remove special chars)
+        const normalizeTitle = (t: string) => t
+            .toLowerCase()
+            .replace(/[^\w\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        const normalizedTitle = normalizeTitle(title);
+        const normalizedExtracted = normalizeTitle(extractedTitle);
+
+        // Check if titles match (allowing for some variation)
+        // Method 1: Exact match after normalization
+        if (normalizedTitle === normalizedExtracted) {
+            return { matches: true, extractedTitle };
+        }
+
+        // Method 2: Check if extracted title contains all significant words from expected title
+        const titleWords = normalizedTitle.split(/\s+/).filter(w => w.length > 3);
+        const extractedWords = normalizedExtracted.split(/\s+/).filter(w => w.length > 3);
+
+        // Check if at least 70% of significant words match
+        const matchingWords = titleWords.filter(word => extractedWords.includes(word));
+        const matchRatio = titleWords.length > 0 ? matchingWords.length / titleWords.length : 0;
+
+        if (matchRatio >= 0.7) {
+            return { matches: true, extractedTitle };
+        }
+
+        // Method 3: Check if expected title contains all significant words from extracted title (reverse check)
+        const reverseMatchingWords = extractedWords.filter(word => titleWords.includes(word));
+        const reverseMatchRatio = extractedWords.length > 0 ? reverseMatchingWords.length / extractedWords.length : 0;
+
+        if (reverseMatchRatio >= 0.7) {
+            return { matches: true, extractedTitle };
+        }
+
+        return {
+            matches: false,
+            extractedTitle,
+            error: `Title mismatch: expected "${title.substring(0, 60)}..." but found "${extractedTitle.substring(0, 60)}..."`
+        };
+
+    } catch (error: any) {
+        // If fetch fails (CORS, network error, etc.), we can't verify but don't reject
+        // This is a warning, not a critical error
+        console.warn(`Could not verify link ${link}:`, error.message);
+        return { matches: false, error: `Could not verify link: ${error.message}` };
     }
 };
 
-// Data Validation and Repair Helper
-const validateAndRepairPaper = (paper: any): any => {
-    if (!paper || typeof paper !== 'object') return null;
+// Data Validation and Repair Helper with enhanced validation
+const validateAndRepairPaper = async (paper: any, verifyLink: boolean = true): Promise<{ paper: any | null; errors: string[] }> => {
+    const errors: string[] = [];
+
+    if (!paper || typeof paper !== 'object') {
+        return { paper: null, errors: ['Paper is not a valid object'] };
+    }
 
     const repaired: any = {};
 
-    // Required fields with defaults
-    repaired.title = String(paper.title || '').trim() || 'Untitled Paper';
-    repaired.authors = String(paper.authors || '').trim() || 'Unknown';
-    repaired.link = String(paper.link || '').trim() || '#';
+    // Required fields with validation
+    repaired.title = String(paper.title || '').trim();
+    if (!repaired.title || repaired.title === 'Untitled Paper' || repaired.title.length < 3) {
+        errors.push('Title is missing or too short');
+        repaired.title = repaired.title || 'Untitled Paper';
+    }
+
+    repaired.authors = String(paper.authors || '').trim();
+    if (!repaired.authors || repaired.authors === 'Unknown') {
+        errors.push('Authors are missing');
+        repaired.authors = repaired.authors || 'Unknown';
+    }
+
+    repaired.link = String(paper.link || '').trim();
+    if (!repaired.link || repaired.link === '#') {
+        errors.push('Link is missing');
+        repaired.link = repaired.link || '#';
+    }
 
     // Optional fields with defaults
     repaired.year = String(paper.year || '').trim() || '';
@@ -152,18 +360,34 @@ const validateAndRepairPaper = (paper: any): any => {
         repaired.link = 'https://' + repaired.link;
     }
 
-    // NEW: Additional validation - check if link seems valid
+    // Enhanced validation - check if link seems valid
     if (repaired.link && repaired.link !== '#') {
         // Check if link contains common paper repository domains
-        const validDomains = ['arxiv.org', 'semanticscholar.org', 'acm.org', 'ieee.org', 'springer.com', 'nature.com', 'openreview.net', 'paperswithcode.com'];
+        const validDomains = ['arxiv.org', 'semanticscholar.org', 'acm.org', 'ieee.org', 'springer.com', 'nature.com', 'openreview.net', 'paperswithcode.com', 'github.com', 'scholar.google.com'];
         const linkLower = repaired.link.toLowerCase();
         const hasValidDomain = validDomains.some(domain => linkLower.includes(domain));
 
-        // If link doesn't have a valid domain, log a warning (but don't reject it, as it might be valid)
+        // If link doesn't have a valid domain, it's suspicious
         if (!hasValidDomain) {
-            console.warn(`Paper "${repaired.title}" has unusual link: ${repaired.link}`);
+            errors.push(`Link domain may be invalid: ${repaired.link}`);
+        }
+
+        // Additional validation: Check if ArXiv link format is correct
+        if (linkLower.includes('arxiv.org')) {
+            const arxivMatch = repaired.link.match(/arxiv\.org\/(abs|pdf)\/(\d{4}\.\d{4,5})/);
+            if (!arxivMatch) {
+                errors.push(`ArXiv link format may be incorrect: ${repaired.link}`);
+            }
+        }
+
+        // Additional validation: Check if Semantic Scholar link format is correct
+        if (linkLower.includes('semanticscholar.org')) {
+            if (!linkLower.includes('/paper/')) {
+                errors.push(`Semantic Scholar link format may be incorrect: ${repaired.link}`);
+            }
         }
     }
+
     if (repaired.codeLink && !repaired.codeLink.startsWith('http://') && !repaired.codeLink.startsWith('https://')) {
         repaired.codeLink = 'https://' + repaired.codeLink;
     }
@@ -174,6 +398,7 @@ const validateAndRepairPaper = (paper: any): any => {
         if (yearMatch) {
             repaired.year = yearMatch[0];
         } else {
+            errors.push(`Year format is invalid: ${paper.year}`);
             repaired.year = '';
         }
     }
@@ -192,24 +417,215 @@ const validateAndRepairPaper = (paper: any): any => {
         if (monthMap[lowerMonth]) {
             repaired.month = monthMap[lowerMonth];
         } else {
+            errors.push(`Month format is invalid: ${paper.month}`);
             repaired.month = '';
         }
     }
 
-    return repaired;
+    // CRITICAL validation: Check if title and link match
+    // This is a strict check - if title and link don't match, reject the paper
+    if (repaired.title && repaired.link && repaired.link !== '#') {
+        const linkLower = repaired.link.toLowerCase();
+        const titleLower = repaired.title.toLowerCase();
+
+        // For ArXiv links, verify format and try to extract meaningful words from title
+        if (linkLower.includes('arxiv.org')) {
+            const arxivMatch = repaired.link.match(/arxiv\.org\/(abs|pdf)\/(\d{4}\.\d{4,5})/);
+            if (!arxivMatch) {
+                errors.push(`Invalid ArXiv link format: ${repaired.link}`);
+            }
+            // Even for ArXiv, we can do some basic validation
+            // Extract key technical terms from title (words longer than 5 chars, excluding common words)
+            const titleKeyTerms = titleLower
+                .replace(/[^\w\s]/g, ' ')
+                .split(/\s+/)
+                .filter((w: string) => w.length > 5 && !['learning', 'network', 'model', 'method', 'approach', 'system', 'algorithm', 'using', 'based'].includes(w))
+                .slice(0, 3);
+
+            // For ArXiv, we can't verify from URL, but we can check if the link looks suspicious
+            // If the link contains common unrelated terms, flag it
+            const suspiciousTerms = ['search', 'list', 'index', 'category', 'archive'];
+            const hasSuspiciousTerms = suspiciousTerms.some(term => linkLower.includes(term) && !linkLower.includes('arxiv.org/abs/') && !linkLower.includes('arxiv.org/pdf/'));
+
+            if (hasSuspiciousTerms) {
+                errors.push(`ArXiv link may not match the paper: "${repaired.title}" vs ${repaired.link}`);
+            }
+        }
+        // For Semantic Scholar, check if URL structure is valid
+        else if (linkLower.includes('semanticscholar.org')) {
+            if (!linkLower.includes('/paper/')) {
+                errors.push(`Invalid Semantic Scholar link format: ${repaired.link}`);
+            }
+            // Extract key words from title and check if they appear in the link
+            // Semantic Scholar URLs sometimes contain paper IDs, so we check title words
+            const titleWords = titleLower
+                .replace(/[^\w\s]/g, ' ')
+                .split(/\s+/)
+                .filter((w: string) => w.length > 4 && !['the', 'and', 'for', 'with', 'from'].includes(w))
+                .slice(0, 4);
+
+            const matchingWords = titleWords.filter((word: string) => linkLower.includes(word));
+
+            // For Semantic Scholar, if no title words match, it's suspicious
+            if (titleWords.length >= 2 && matchingWords.length === 0) {
+                errors.push(`Title and link may not match (Semantic Scholar): "${repaired.title}" vs ${repaired.link}`);
+            }
+        }
+        // For other links (Google Scholar, publisher sites, etc.)
+        else {
+            // Extract key words from title
+            const titleWords = titleLower
+                .replace(/[^\w\s]/g, ' ')
+                .split(/\s+/)
+                .filter((w: string) => w.length > 4 && !['the', 'and', 'for', 'with', 'from', 'using', 'based'].includes(w))
+                .slice(0, 4); // Check first 4 significant words
+
+            const matchingWords = titleWords.filter((word: string) => linkLower.includes(word));
+
+            // For non-ArXiv/Semantic Scholar links, require at least some title words to match
+            if (titleWords.length >= 2 && matchingWords.length === 0) {
+                errors.push(`Title and link likely don't match: "${repaired.title}" vs ${repaired.link}`);
+            }
+        }
+
+        // Additional check: Look for common mismatches
+        // If link contains words that contradict the title, flag it
+        const titleKeyTerms = titleLower
+            .replace(/[^\w\s]/g, ' ')
+            .split(/\s+/)
+            .filter((w: string) => w.length > 5)
+            .slice(0, 3);
+
+        // Check if link contains unrelated common terms that suggest a mismatch
+        const unrelatedTerms = ['abstract', 'citation', 'reference', 'related', 'similar'];
+        const hasUnrelatedContext = unrelatedTerms.some(term =>
+            linkLower.includes(term) &&
+            !titleKeyTerms.some(titleTerm => linkLower.includes(titleTerm))
+        );
+
+        if (hasUnrelatedContext && titleKeyTerms.length > 0) {
+            errors.push(`Link appears to be a related/abstract page, not the paper itself: ${repaired.link}`);
+        }
+    }
+
+    // CRITICAL validation: Actually fetch the link and verify title matches
+    if (verifyLink && repaired.title && repaired.link && repaired.link !== '#' && repaired.link.startsWith('http')) {
+        try {
+            const verification = await verifyTitleLinkMatch(repaired.title, repaired.link);
+            if (!verification.matches) {
+                if (verification.error && !verification.error.includes('Could not verify')) {
+                    // Only add as critical error if we successfully fetched but titles don't match
+                    errors.push(`Title-link mismatch verified: ${verification.error}`);
+                } else if (verification.extractedTitle) {
+                    // We extracted a title but it doesn't match
+                    errors.push(`Title-link mismatch: Expected "${repaired.title.substring(0, 50)}..." but link shows "${verification.extractedTitle.substring(0, 50)}..."`);
+                }
+                // If we couldn't fetch (CORS, network error), just log a warning, don't reject
+            } else {
+                console.log(`✅ Verified title-link match for: ${repaired.title.substring(0, 50)}...`);
+            }
+        } catch (error: any) {
+            // If verification fails, log but don't reject (network issues shouldn't block valid papers)
+            console.warn(`Could not verify link ${repaired.link}:`, error.message);
+        }
+    }
+
+    // CRITICAL validation: Check if codeLink matches the paper (if provided)
+    if (repaired.codeLink && repaired.codeLink.trim() !== '') {
+        const codeLinkLower = repaired.codeLink.toLowerCase();
+        const titleLower = repaired.title.toLowerCase();
+
+        // CodeLink should be a GitHub URL
+        if (!codeLinkLower.includes('github.com')) {
+            errors.push(`CodeLink should be a GitHub URL: ${repaired.codeLink}`);
+        } else {
+            // Extract key technical terms from title
+            const titleKeyTerms = titleLower
+                .replace(/[^\w\s]/g, ' ')
+                .split(/\s+/)
+                .filter((w: string) => w.length > 4 && !['the', 'and', 'for', 'with', 'from', 'using', 'based', 'learning', 'network', 'model'].includes(w))
+                .slice(0, 3);
+
+            // Check if codeLink contains any title keywords (GitHub repo names/descriptions often contain paper title words)
+            const matchingWords = titleKeyTerms.filter((word: string) => codeLinkLower.includes(word));
+
+            // If codeLink is provided but contains no title words, it might be a mismatch
+            // However, this is less strict than paper link validation since repo names can vary
+            if (titleKeyTerms.length >= 2 && matchingWords.length === 0) {
+                // This is a warning, not a critical error, since repo names can be different
+                errors.push(`CodeLink may not match the paper (no title keywords found): "${repaired.title}" vs ${repaired.codeLink}`);
+            }
+
+            // Check for obviously wrong patterns
+            const wrongPatterns = ['awesome-', 'papers', 'list', 'collection', 'survey'];
+            const hasWrongPattern = wrongPatterns.some(pattern =>
+                codeLinkLower.includes(pattern) &&
+                !titleKeyTerms.some(term => codeLinkLower.includes(term))
+            );
+
+            if (hasWrongPattern) {
+                errors.push(`CodeLink appears to be a collection/list, not the paper's repository: ${repaired.codeLink}`);
+            }
+        }
+    }
+
+    // Only return paper if it has at least title and link (even if there are warnings)
+    if (repaired.title && repaired.title !== 'Untitled Paper' && repaired.link && repaired.link !== '#') {
+        return { paper: repaired, errors };
+    } else {
+        return { paper: null, errors: ['Paper missing critical fields (title or link)'] };
+    }
 };
 
-// Validate and repair array of papers
-const validateAndRepairPapers = (papers: any[]): any[] => {
-    if (!Array.isArray(papers)) return [];
+// Validate and repair array of papers with error reporting
+const validateAndRepairPapers = async (papers: any[], verifyLinks: boolean = true): Promise<{ papers: any[]; errors: string[] }> => {
+    if (!Array.isArray(papers)) {
+        return { papers: [], errors: ['Input is not an array'] };
+    }
 
-    return papers
-        .map(paper => validateAndRepairPaper(paper))
-        .filter(paper => {
-            // Fix the filter logic - use proper parentheses
-            return paper !== null &&
-                (paper.title !== 'Untitled Paper' || paper.authors !== 'Unknown');
-        });
+    const allErrors: string[] = [];
+    const validPapers: any[] = [];
+
+    // Process papers sequentially to avoid overwhelming the CORS proxy
+    for (let index = 0; index < papers.length; index++) {
+        const paper = papers[index];
+        const result = await validateAndRepairPaper(paper, verifyLinks);
+        if (result.paper) {
+            // Check if there are critical errors that should cause rejection
+            const criticalErrors = result.errors.filter(err =>
+                err.includes('Title and link likely don\'t match') ||
+                err.includes('Title and link may not match') ||
+                err.includes('Link appears to be a related/abstract page') ||
+                err.includes('ArXiv link may not match the paper') ||
+                err.includes('CodeLink appears to be a collection/list') ||
+                err.includes('Title-link mismatch verified') ||
+                err.includes('Title-link mismatch:')
+            );
+
+            if (criticalErrors.length > 0) {
+                // Reject papers with critical title/link mismatch errors
+                console.error(`❌ Paper ${index + 1} REJECTED due to title/link mismatch:`, {
+                    title: result.paper.title,
+                    link: result.paper.link,
+                    errors: criticalErrors
+                });
+                allErrors.push(`Paper ${index + 1} REJECTED (title/link mismatch): ${criticalErrors.join('; ')}`);
+            } else {
+                // Accept paper but log warnings
+                validPapers.push(result.paper);
+                if (result.errors.length > 0) {
+                    console.warn(`⚠️ Paper ${index + 1} has warnings:`, result.errors);
+                    allErrors.push(`Paper ${index + 1}: ${result.errors.join('; ')}`);
+                }
+            }
+        } else {
+            // Log errors for rejected papers
+            console.error(`❌ Paper ${index + 1} was rejected:`, result.errors);
+            allErrors.push(`Paper ${index + 1} rejected: ${result.errors.join('; ')}`);
+        }
+    };
+
+    return { papers: validPapers, errors: allErrors };
 };
 
 // Helper for parsing metrics strings like "1.2k" or "100+"
@@ -231,6 +647,8 @@ export const ViewPillar: React.FC<Props> = ({
     language, userName
 }) => {
     const [isScanning, setIsScanning] = useState(false);
+    const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 }); // Track scan progress
+    const scanCancelRef = useRef(false); // Ref to track if scan should be cancelled
     const [stagedPapers, setStagedPapers] = useState<Paper[]>([]);
     const [searchCount, setSearchCount] = useState(3);
 
@@ -262,6 +680,8 @@ export const ViewPillar: React.FC<Props> = ({
         findNewPapers: language === 'cn' ? '🔎 查找新论文' : '🔎 Find New Papers',
         count: language === 'cn' ? '数量' : 'Count',
         scanning: language === 'cn' ? '扫描中...' : 'Scanning...',
+        stop: language === 'cn' ? '停止' : 'Stop',
+        foundProgress: language === 'cn' ? '已找到' : 'Found',
         staging: language === 'cn' ? '论文暂存区' : 'Paper Staging Area',
         clear: language === 'cn' ? '🗑️ 清空结果' : '🗑️ Clear Results',
         merge: language === 'cn' ? '选择操作...' : 'Choose Action...',
@@ -367,6 +787,10 @@ export const ViewPillar: React.FC<Props> = ({
 
     // --- AI ACTIONS ---
 
+    const handleStopScan = () => {
+        scanCancelRef.current = true;
+    };
+
     const handleScan = async (scope: 'pillar' | 'topic', topicId?: string) => {
 
         // Validation: Start date must be before End date
@@ -375,7 +799,11 @@ export const ViewPillar: React.FC<Props> = ({
             return;
         }
 
+        // Reset cancel flag and progress
+        scanCancelRef.current = false;
         setIsScanning(true);
+        setScanProgress({ current: 0, total: searchCount });
+
         try {
             const provider = getAIProvider();
 
@@ -386,9 +814,17 @@ export const ViewPillar: React.FC<Props> = ({
             const cleanPillarTitle = pillar.title.replace(/^[IVX]+\.\s*/, ''); // Strip "I. " for better search
 
             if (scope === 'pillar') {
-                // Area Search
+                // Area Search - Aligned with Topic Search format
                 searchQueryTerm = cleanPillarTitle;
-                context = `Domain: "${cleanPillarTitle}". Description: ${pillar.description}. Existing Topics: ${pillar.topics.map(t => t.title).join(', ')}.`;
+                // Collect example papers from all topics (similar to topic search)
+                const domainPapers = pillar.topics
+                    .flatMap(t => t.papers)
+                    .map(p => p.title)
+                    .slice(0, 10)
+                    .join(', ');
+                // Use similar format as topic search for consistency
+                const topicsList = pillar.topics.map(t => t.title).join(', ');
+                context = `Domain: "${cleanPillarTitle}". \nDescription: ${pillar.description}. \nExisting Topics: ${topicsList}. \nExamples: ${domainPapers}.`;
                 // Limit context size
                 existingTitles = pillar.topics.flatMap(t => t.papers.map(p => p.title)).slice(0, 30);
             } else {
@@ -409,213 +845,285 @@ export const ViewPillar: React.FC<Props> = ({
             const startStr = `${startYear}-${sMonth}`;
             const endStr = `${endYear}-${eMonth}`;
 
-            // Use optimized prompt from prompts.ts
-            const prompt = getFindPapersPrompt({
-                searchCount,
-                startDate: startStr,
-                endDate: endStr,
-                searchQuery: searchQueryTerm,
-                context,
-                existingTitles,
-                language
-            });
-
-            // Retry mechanism
+            const currentModel = getSelectedModel();
             const maxRetries = 3;
-            let lastError: any = null;
-            let validPapers: any[] = [];
+            let foundCount = 0;
 
-            for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                try {
-                    const response = await provider.generateContent({
-                        prompt,
-                        tools: [{ googleSearch: {} }]
-                    });
+            // Find papers one by one
+            for (let paperIndex = 0; paperIndex < searchCount; paperIndex++) {
+                // Check if user cancelled
+                if (scanCancelRef.current) {
+                    console.log('⏹️ Scan cancelled by user');
+                    break;
+                }
 
-                    console.log(`AI Response Raw (Attempt ${attempt}):`, response.text); // DEBUGGING
+                // Update progress
+                setScanProgress({ current: foundCount, total: searchCount });
 
-                    const json = parseJSON(response.text);
+                // Get current list of found papers to exclude
+                // Limit to avoid RECITATION errors (too many titles can trigger recitation policy)
+                // Start with fewer titles, will reduce further if RECITATION occurs
+                let currentExistingTitles = [...existingTitles].slice(0, 10); // Start with 10 to avoid RECITATION
+                if (scope === 'pillar') {
+                    const stagedTitles = stagedPapers.map(p => p.title).slice(0, 5); // Limit staged papers
+                    currentExistingTitles = [
+                        ...currentExistingTitles,
+                        ...stagedTitles
+                    ].slice(0, 15); // Total limit of 15
+                } else if (scope === 'topic' && topicId) {
+                    const topicStagedTitles = (topicResults[topicId] || []).map(p => p.title).slice(0, 5);
+                    currentExistingTitles = [
+                        ...currentExistingTitles,
+                        ...topicStagedTitles
+                    ].slice(0, 15); // Total limit of 15
+                }
 
-                    if (json && Array.isArray(json) && json.length > 0) {
-                        // DEBUG: Log raw AI response for inspection
-                        console.log('=== AI RAW RESPONSE (Attempt ' + attempt + ') ===');
-                        console.log('Full response text:', response.text.substring(0, 1000) + '...');
+                // Request ONE paper at a time
+                let promptConfig = getFindPapersPrompt({
+                    searchCount: 1, // Always request 1 paper at a time
+                    startDate: startStr,
+                    endDate: endStr,
+                    searchQuery: searchQueryTerm,
+                    context,
+                    existingTitles: currentExistingTitles,
+                    language
+                }, currentModel || undefined);
 
-                        // DEBUG: Log each paper's title and link BEFORE validation
-                        console.log('=== PARSED PAPERS (BEFORE validation) ===');
-                        json.forEach((p: any, index: number) => {
-                            console.log(`Paper ${index + 1}:`, {
-                                title: p.title,
-                                link: p.link,
-                                authors: p.authors,
-                                year: p.year,
-                                month: p.month
-                            });
+                let paperFound = false;
+                let lastError: any = null;
+                let adjustedExistingTitles = currentExistingTitles; // Track adjusted titles for RECITATION retries
+
+                // Retry mechanism for this single paper
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    // Check if user cancelled before each attempt
+                    if (scanCancelRef.current) {
+                        break;
+                    }
+
+                    // If previous attempt failed with RECITATION, reduce existingTitles and regenerate prompt
+                    if (lastError && lastError.message && lastError.message.includes('recitation')) {
+                        console.warn(`⚠️ RECITATION detected, reducing existingTitles from ${adjustedExistingTitles.length} to ${Math.max(5, Math.floor(adjustedExistingTitles.length / 2))}`);
+                        adjustedExistingTitles = adjustedExistingTitles.slice(0, Math.max(5, Math.floor(adjustedExistingTitles.length / 2)));
+
+                        // Regenerate prompt with reduced titles
+                        promptConfig = getFindPapersPrompt({
+                            searchCount: 1,
+                            startDate: startStr,
+                            endDate: endStr,
+                            searchQuery: searchQueryTerm,
+                            context,
+                            existingTitles: adjustedExistingTitles,
+                            language
+                        }, currentModel || undefined);
+                    }
+
+                    try {
+                        const response = await provider.generateContent({
+                            prompt: promptConfig.prompt,
+                            systemInstruction: promptConfig.systemInstruction,
+                            tools: [{ googleSearch: {} }]
                         });
 
-                        // NEW: Validate that each paper object has matching title and link
-                        // Check if there are any obvious mismatches
-                        const papersWithIssues: any[] = [];
-                        json.forEach((p: any, index: number) => {
-                            if (!p.title || !p.link) {
-                                papersWithIssues.push({
-                                    index,
-                                    issue: 'Missing title or link',
-                                    paper: p
-                                });
-                                return;
+                        // Check for empty response BEFORE parsing
+                        if (!response.text || response.text.trim().length === 0) {
+                            console.error(`❌ Empty response from AI (Paper ${paperIndex + 1}, Attempt ${attempt})`);
+                            lastError = new Error('AI returned empty response.');
+                            if (attempt < maxRetries) {
+                                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                                continue;
                             }
-
-                            // Check if link contains the paper title (basic validation)
-                            const titleWords = p.title.toLowerCase()
-                                .split(/\s+/)
-                                .filter((w: string) => w.length > 3)
-                                .slice(0, 3); // Take first 3 significant words
-                            const linkLower = p.link.toLowerCase();
-                            const hasTitleInLink = titleWords.length > 0 &&
-                                titleWords.some((word: string) => linkLower.includes(word));
-
-                            // For ArXiv links, check if they look valid
-                            if (linkLower.includes('arxiv.org')) {
-                                const arxivIdMatch = linkLower.match(/arxiv\.org\/abs\/(\d{4}\.\d{4,5})/);
-                                if (!arxivIdMatch) {
-                                    papersWithIssues.push({
-                                        index,
-                                        issue: 'ArXiv link format looks invalid',
-                                        paper: p,
-                                        expectedFormat: 'https://arxiv.org/abs/YYYY.NNNNN'
-                                    });
-                                }
-                            }
-
-                            // For Semantic Scholar links, check format
-                            if (linkLower.includes('semanticscholar.org')) {
-                                if (!linkLower.includes('/paper/')) {
-                                    papersWithIssues.push({
-                                        index,
-                                        issue: 'Semantic Scholar link format looks invalid',
-                                        paper: p
-                                    });
-                                }
-                            }
-
-                            // Log if title words don't appear in link (potential mismatch)
-                            if (!hasTitleInLink && !linkLower.includes('arxiv.org') && !linkLower.includes('semanticscholar.org')) {
-                                console.warn(`⚠️ Paper ${index + 1} potential mismatch: Title words not found in link`, {
-                                    title: p.title,
-                                    link: p.link,
-                                    titleWords: titleWords
-                                });
-                            }
-                        });
-
-                        if (papersWithIssues.length > 0) {
-                            console.warn('⚠️ Found papers with potential issues:', papersWithIssues);
+                            break;
                         }
 
-                        // Validate and repair all papers
-                        const repairedPapers = validateAndRepairPapers(json);
+                        const parseResult = parseJSON(response.text);
 
-                        // DEBUG: Log after validation
-                        console.log('=== REPAIRED PAPERS (AFTER validation) ===');
-                        repairedPapers.forEach((p: any, index: number) => {
-                            console.log(`Paper ${index + 1}:`, {
-                                title: p.title,
-                                link: p.link,
-                                authors: p.authors,
-                                year: p.year,
-                                month: p.month
-                            });
-                        });
+                        if (parseResult.error) {
+                            console.error(`JSON Parse Error (Paper ${paperIndex + 1}, Attempt ${attempt}):`, parseResult.error);
+                            lastError = new Error(`JSON parsing failed: ${parseResult.error}`);
+                            if (attempt < maxRetries) {
+                                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                                continue;
+                            }
+                            break;
+                        }
 
-                        if (repairedPapers.length > 0) {
-                            // Success: Tag new papers with IDs
-                            validPapers = repairedPapers.map((p: any) => ({
-                                ...p,
+                        const json = parseResult.data;
+
+                        if (!json || !Array.isArray(json) || json.length === 0) {
+                            console.warn(`Invalid or Empty JSON from AI (Paper ${paperIndex + 1}, Attempt ${attempt}), retrying...`);
+                            lastError = new Error("Invalid JSON format or empty array");
+                            if (attempt < maxRetries) {
+                                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                                continue;
+                            }
+                            break;
+                        }
+
+                        // Validate and repair the paper (with link verification)
+                        const validationResult = await validateAndRepairPapers(json, true);
+
+                        // Log validation results for debugging
+                        if (validationResult.errors.length > 0) {
+                            console.log(`⚠️ Validation warnings/errors for paper ${paperIndex + 1}:`, validationResult.errors);
+
+                            // Check for critical errors
+                            const criticalErrors = validationResult.errors.filter(err =>
+                                err.includes('REJECTED') ||
+                                err.includes('title/link mismatch') ||
+                                err.includes('Title and link') ||
+                                err.includes('ArXiv link may not match') ||
+                                err.includes('CodeLink appears to be a collection/list')
+                            );
+
+                            if (criticalErrors.length > 0) {
+                                console.error(`❌ Paper ${paperIndex + 1} has critical validation errors and will be rejected:`, criticalErrors);
+                            }
+                        }
+
+                        if (validationResult.papers.length > 0) {
+                            // Success: Found a valid paper
+                            const validPaper = {
+                                ...validationResult.papers[0],
                                 id: `scan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                                 isNew: true
-                            }));
+                            };
 
-                            console.log(`Successfully parsed ${validPapers.length} papers (Attempt ${attempt})`);
+                            // Additional verification: Log title and link for manual inspection
+                            console.log(`✅ Paper ${paperIndex + 1} validated:`, {
+                                title: validPaper.title.substring(0, 60) + (validPaper.title.length > 60 ? '...' : ''),
+                                link: validPaper.link,
+                                codeLink: validPaper.codeLink || 'none'
+                            });
+
+                            // Immediately add to results (real-time update)
+                            if (scope === 'pillar') {
+                                setStagedPapers(prev => [...prev, validPaper]);
+                                // Auto-scroll to staging area on first paper
+                                if (foundCount === 0) {
+                                    setTimeout(() => {
+                                        document.getElementById('staging-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }, 100);
+                                }
+                            } else if (scope === 'topic' && topicId) {
+                                setTopicResults(prev => ({
+                                    ...prev,
+                                    [topicId]: [...(prev[topicId] || []), validPaper]
+                                }));
+                            }
+
+                            foundCount++;
+                            setScanProgress({ current: foundCount, total: searchCount });
+                            paperFound = true;
+
+                            console.log(`✅ Found paper ${foundCount}/${searchCount}:`, validPaper.title);
                             break; // Success, exit retry loop
                         } else {
-                            // All papers were invalid
-                            console.warn(`All papers invalid (Attempt ${attempt}), retrying...`);
-                            lastError = new Error("All papers failed validation");
+                            // Paper validation failed
+                            console.warn(`❌ Paper validation failed (Paper ${paperIndex + 1}, Attempt ${attempt})`);
+                            lastError = new Error(`Paper validation failed: ${validationResult.errors.join('; ')}`);
                             if (attempt < maxRetries) {
-                                await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+                                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
                                 continue;
                             }
                         }
-                    } else {
-                        // Parse failed or empty array
-                        console.warn(`Invalid or Empty JSON from AI (Attempt ${attempt}), retrying...`, json);
-                        lastError = new Error("Invalid JSON format or empty array");
+                    } catch (e) {
+                        console.error(`Scan Error (Paper ${paperIndex + 1}, Attempt ${attempt}):`, e);
+                        lastError = e;
                         if (attempt < maxRetries) {
-                            await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+                            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
                             continue;
                         }
                     }
-                } catch (e) {
-                    console.error(`Scan Error (Attempt ${attempt}):`, e);
-                    lastError = e;
-                    if (attempt < maxRetries) {
-                        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
-                        continue;
-                    }
+                }
+
+                // If we couldn't find a valid paper after all retries, log and continue
+                if (!paperFound) {
+                    console.warn(`⚠️ Could not find valid paper ${paperIndex + 1} after ${maxRetries} attempts, continuing...`);
+                }
+
+                // Small delay between papers to avoid rate limiting
+                if (paperIndex < searchCount - 1 && !scanCancelRef.current) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
             }
 
-            // Process results
-            if (validPapers.length > 0) {
-                if (scope === 'pillar') {
-                    // Global Staging - Append to existing
-                    setStagedPapers(prev => [...prev, ...validPapers]);
-                    // Scroll to Staging Area
-                    setTimeout(() => {
-                        document.getElementById('staging-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 100);
-                } else if (scope === 'topic' && topicId) {
-                    // Topic-specific Staging
-                    setTopicResults(prev => ({
-                        ...prev,
-                        [topicId]: [...(prev[topicId] || []), ...validPapers]
-                    }));
-                }
-            } else {
-                // All retries failed
-                console.error("Scan failed after all retries", lastError);
-                alert(language === 'cn'
-                    ? `未找到符合条件的论文，或 AI 返回格式有误（已重试 ${maxRetries} 次）。请检查控制台或稍后重试。`
-                    : `No papers found matching criteria or AI format error (retried ${maxRetries} times). Please check the console or try again later.`);
+            // Final progress update
+            setScanProgress({ current: foundCount, total: searchCount });
+
+            // Show completion message
+            if (foundCount > 0) {
+                console.log(`✅ Scan completed: Found ${foundCount} out of ${searchCount} requested papers`);
+            } else if (!scanCancelRef.current) {
+                // Only show error if not cancelled
+                const errorMessage = language === 'cn'
+                    ? `未找到符合条件的论文。\n\n请检查：\n1. 日期范围是否合理\n2. 搜索关键词是否准确\n3. 控制台中的详细错误信息`
+                    : `No papers found matching criteria.\n\nPlease check:\n1. If the date range is reasonable\n2. If the search keywords are accurate\n3. Detailed error information in the console`;
+                alert(errorMessage);
             }
         } catch (e) {
             console.error("Scan Error:", e);
-            alert(language === 'cn' ? "扫描失败，请检查网络或 API 密钥。" : "Scan failed. Please check your network or API Key.");
+            if (!scanCancelRef.current) {
+                alert(language === 'cn' ? "扫描失败，请检查网络或 API 密钥。" : "Scan failed. Please check your network or API Key.");
+            }
         } finally {
             setIsScanning(false);
+            setScanProgress({ current: 0, total: 0 });
+            scanCancelRef.current = false;
         }
     };
 
     const refreshPaperStats = async (topicId: string, paper: Paper) => {
+        // Set refreshing state at the start
+        setRefreshingIds(prev => new Set(prev).add(paper.id));
+
         try {
             const provider = getAIProvider();
+            const currentModel = getSelectedModel();
             const prompt = getRefreshStatsPrompt({
                 title: paper.title,
-                authors: paper.authors
-            });
+                authors: paper.authors,
+                abstract: paper.abstract,
+                link: paper.link,
+                codeLink: paper.codeLink
+            }, currentModel || undefined);
 
             const response = await provider.generateContent({
                 prompt,
                 tools: [{ googleSearch: {} }]
             });
 
-            const json = parseJSON(response.text);
-            if (json) {
-                onUpdatePaper(topicId, paper.id, {
-                    citationCount: json.citationCount || paper.citationCount,
-                    stars: json.stars || paper.stars
-                });
+            const parseResult = parseJSON(response.text);
+            if (parseResult.data && !parseResult.error) {
+                const json = parseResult.data;
+                // Update all verified fields: link, codeLink, citationCount, and stars
+                const updates: Partial<Paper> = {};
+
+                // Only update link if a verified one is returned and it's different
+                if (json.link && json.link !== paper.link) {
+                    updates.link = json.link;
+                }
+
+                // Update codeLink (can be empty string if no match found)
+                if (json.codeLink !== undefined) {
+                    updates.codeLink = json.codeLink || '';
+                }
+
+                // Update citation count if found
+                if (json.citationCount !== undefined) {
+                    updates.citationCount = json.citationCount || paper.citationCount;
+                }
+
+                // Update stars if found
+                if (json.stars !== undefined) {
+                    updates.stars = json.stars || paper.stars;
+                }
+
+                // Only update if there are actual changes
+                if (Object.keys(updates).length > 0) {
+                    onUpdatePaper(topicId, paper.id, updates);
+                }
+            } else {
+                console.warn("Stats refresh parse failed:", parseResult.error);
             }
         } catch (e) {
             console.error("Stats refresh failed", e);
@@ -757,23 +1265,30 @@ export const ViewPillar: React.FC<Props> = ({
 
                     <div className="flex-1"></div>
 
-                    <button
-                        onClick={() => handleScan('pillar')}
-                        disabled={isScanning}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-indigo-900/20 disabled:opacity-50 flex items-center gap-2"
-                    >
+                    <div className="flex items-center gap-2">
+                        {isScanning && (
+                            <div className="text-sm text-slate-400">
+                                {t.foundProgress} {scanProgress.current}/{scanProgress.total}
+                            </div>
+                        )}
                         {isScanning ? (
-                            <>
-                                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                                {t.scanning}
-                            </>
+                            <button
+                                onClick={handleStopScan}
+                                className="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-red-900/20 flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                {t.stop}
+                            </button>
                         ) : (
-                            <>
+                            <button
+                                onClick={() => handleScan('pillar')}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-indigo-900/20 flex items-center gap-2"
+                            >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                                 {t.findNewPapers}
-                            </>
+                            </button>
                         )}
-                    </button>
+                    </div>
                 </div>
             </div>
 
@@ -932,14 +1447,28 @@ export const ViewPillar: React.FC<Props> = ({
 
                             <div className="flex items-center gap-2">
                                 {/* Topic Level Search Controls */}
-                                <button
-                                    onClick={() => handleScan('topic', topic.id)}
-                                    disabled={isScanning}
-                                    className="px-3 py-1.5 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded text-xs font-bold transition-colors flex items-center gap-1 border border-indigo-500/20"
-                                    title={`Find Papers for ${topic.title} using dates ${startYear}-${startMonth} to ${endYear}-${endMonth}`}
-                                >
-                                    {isScanning ? t.scanning : t.findNewPapers}
-                                </button>
+                                {isScanning ? (
+                                    <button
+                                        onClick={handleStopScan}
+                                        className="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded text-xs font-bold transition-colors flex items-center gap-1 border border-red-500/20"
+                                        title="Stop scanning"
+                                    >
+                                        {t.stop}
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => handleScan('topic', topic.id)}
+                                        className="px-3 py-1.5 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded text-xs font-bold transition-colors flex items-center gap-1 border border-indigo-500/20"
+                                        title={`Find Papers for ${topic.title} using dates ${startYear}-${startMonth} to ${endYear}-${endMonth}`}
+                                    >
+                                        {t.findNewPapers}
+                                    </button>
+                                )}
+                                {isScanning && (
+                                    <div className="text-xs text-slate-400">
+                                        {t.foundProgress} {scanProgress.current}/{scanProgress.total}
+                                    </div>
+                                )}
 
                                 <div className="w-px h-4 bg-slate-700 mx-2"></div>
 
@@ -1107,16 +1636,17 @@ export const ViewPillar: React.FC<Props> = ({
 const StagedPaperCard: React.FC<{ paper: Paper, actions: React.ReactNode, language: 'en' | 'cn' }> = ({ paper, actions, language }) => {
     const [showAbstract, setShowAbstract] = useState(false);
 
-    const handleDragStart = (e: React.DragEvent) => {
-        e.dataTransfer.setData('application/json', JSON.stringify(paper));
-        e.dataTransfer.effectAllowed = 'move';
-    };
+    // 拖动功能已注释
+    // const handleDragStart = (e: React.DragEvent) => {
+    //     e.dataTransfer.setData('application/json', JSON.stringify(paper));
+    //     e.dataTransfer.effectAllowed = 'move';
+    // };
 
     return (
         <div
-            draggable
-            onDragStart={handleDragStart}
-            className="bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 shadow-sm flex flex-col gap-3 transition-all hover:border-indigo-500/50 hover:shadow-md animate-fade-in cursor-move"
+            // draggable
+            // onDragStart={handleDragStart}
+            className="bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 shadow-sm flex flex-col gap-3 transition-all hover:border-indigo-500/50 hover:shadow-md animate-fade-in"
         >
             <div className="flex flex-col md:flex-row gap-4 justify-between items-start">
                 <div className="flex-1 min-w-0">
@@ -1220,16 +1750,17 @@ const PaperCard: React.FC<PaperCardProps> = ({
 
     const commentCount = paper.comments?.length || 0;
 
-    const handleDragStart = (e: React.DragEvent) => {
-        e.dataTransfer.setData('application/json', JSON.stringify(paper));
-        e.dataTransfer.effectAllowed = 'move';
-    };
+    // 拖动功能已注释
+    // const handleDragStart = (e: React.DragEvent) => {
+    //     e.dataTransfer.setData('application/json', JSON.stringify(paper));
+    //     e.dataTransfer.effectAllowed = 'move';
+    // };
 
     return (
         <div
-            draggable
-            onDragStart={handleDragStart}
-            className={`bg-slate-800/40 border border-slate-700 rounded-xl p-5 transition-all hover:bg-slate-800 hover:shadow-xl ${borderClass} group relative cursor-move`}
+            // draggable
+            // onDragStart={handleDragStart}
+            className={`bg-slate-800/40 border border-slate-700 rounded-xl p-5 transition-all hover:bg-slate-800 hover:shadow-xl ${borderClass} group relative`}
         >
             {isEditMode && (
                 <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
@@ -1487,8 +2018,9 @@ const PaperFormModal: React.FC<PaperFormModalProps> = ({ initialData, onClose, o
                     authors: formData.authors
                 };
 
-                // Use optimized prompt from prompts.ts
-                const prompt = getAiFillPrompt(relevantInput);
+                // Use optimized prompt from prompts.ts (automatically uses current model)
+                const currentModel = getSelectedModel();
+                const prompt = getAiFillPrompt(relevantInput, currentModel || undefined);
 
                 const response = await provider.generateContent({
                     prompt,
@@ -1497,26 +2029,41 @@ const PaperFormModal: React.FC<PaperFormModalProps> = ({ initialData, onClose, o
 
                 console.log(`AI Fill Response (Attempt ${attempt}):`, response.text); // Debug
 
-                const json = parseJSON(response.text);
+                const parseResult = parseJSON(response.text);
+
+                if (parseResult.error) {
+                    console.warn(`AI Fill parse failed (Attempt ${attempt}):`, parseResult.error);
+                    lastError = new Error(`JSON parsing failed: ${parseResult.error}`);
+                    if (attempt < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+                        continue;
+                    }
+                    break;
+                }
+
+                const json = parseResult.data;
 
                 if (json && typeof json === 'object') {
                     // Validate and repair the data
-                    const repaired = validateAndRepairPaper(json);
+                    const validationResult = await validateAndRepairPaper(json, false); // Don't verify link for AI Fill
 
-                    if (repaired && repaired.title && repaired.title !== 'Untitled Paper') {
+                    if (validationResult.paper && validationResult.paper.title && validationResult.paper.title !== 'Untitled Paper') {
                         // Success: Update form with repaired data
                         setFormData(prev => ({
                             ...prev,
-                            ...repaired,
+                            ...validationResult.paper,
                             isNew: prev.isNew // Keep user preference for isNew
                         }));
-                        console.log("AI Fill successful with repaired data:", repaired);
+                        console.log("✅ AI Fill successful with repaired data:", validationResult.paper);
+                        if (validationResult.errors.length > 0) {
+                            console.warn("⚠️ AI Fill warnings:", validationResult.errors);
+                        }
                         setIsFilling(false);
                         return; // Success, exit retry loop
                     } else {
                         // Partial success but data is too incomplete
-                        console.warn("AI Fill returned incomplete data, retrying...", repaired);
-                        lastError = new Error("Incomplete data returned");
+                        console.warn("AI Fill returned incomplete data, retrying...", validationResult);
+                        lastError = new Error(`Incomplete data returned: ${validationResult.errors.join('; ')}`);
                         if (attempt < maxRetries) {
                             await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
                             continue;
@@ -1525,7 +2072,7 @@ const PaperFormModal: React.FC<PaperFormModalProps> = ({ initialData, onClose, o
                 } else {
                     // Parse failed
                     console.warn(`AI Fill parse failed (Attempt ${attempt}), retrying...`);
-                    lastError = new Error("Invalid JSON format");
+                    lastError = new Error("Invalid JSON format or not an object");
                     if (attempt < maxRetries) {
                         await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
                         continue;

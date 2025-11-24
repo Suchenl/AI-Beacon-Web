@@ -504,6 +504,10 @@ function App() {
                     localStorage.setItem('ai_beacon_auto_link', 'true');
                     // Save current data to the linked file
                     await fileSystem.saveToHandle(linkResult.handle, pillars);
+                    // Persist handle so future sessions reuse it automatically
+                    if (linkResult.handle) {
+                        await fileSystem.saveFileHandleToIndexedDB(linkResult.handle, 'knowledge-base');
+                    }
                 }
             } catch (e) {
                 console.warn('Auto-link failed or cancelled:', e);

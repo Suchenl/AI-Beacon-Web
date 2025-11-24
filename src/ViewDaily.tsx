@@ -354,17 +354,18 @@ export const ViewDaily: React.FC<Props> = ({ pillars, onAddPaperToPillar, langua
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {papers.map((paper, idx) => {
-            const handleDragStart = (e: React.DragEvent) => {
-              e.dataTransfer.setData('application/json', JSON.stringify(paper));
-              e.dataTransfer.effectAllowed = 'move';
-            };
+            // 拖动功能已注释
+            // const handleDragStart = (e: React.DragEvent) => {
+            //   e.dataTransfer.setData('application/json', JSON.stringify(paper));
+            //   e.dataTransfer.effectAllowed = 'move';
+            // };
 
             return (
             <div 
               key={paper.id} 
-              draggable
-              onDragStart={handleDragStart}
-              className="bg-slate-800/40 border border-slate-700 rounded-xl p-6 hover:bg-slate-800 transition-all group relative flex flex-col cursor-move"
+              // draggable
+              // onDragStart={handleDragStart}
+              className="bg-slate-800/40 border border-slate-700 rounded-xl p-6 hover:bg-slate-800 transition-all group relative flex flex-col"
             >
               {/* Ranking Badge for AI Mode */}
               {curatorMode && (
