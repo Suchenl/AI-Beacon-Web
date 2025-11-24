@@ -4,6 +4,7 @@
 ![Tech](https://img.shields.io/badge/Built%20with-React%20%7C%20TypeScript%20%7C%20Gemini-purple)
 ![Status](https://img.shields.io/badge/Status-Active%20Research-green)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+![Homepage](assets/guide_images/homePage.png)
 
 **AI Beacon** is an intelligent, customizable **Personal Knowledge Base (PKB)** designed for AI Researchers and Engineers.
 
@@ -13,7 +14,6 @@ In an era where dozens of groundbreaking papers are released daily on ArXiv, kee
 
 ---
 
-![Homepage](assets/guide_images/homePage.png)
 
 # 🔗 Documentation
 
