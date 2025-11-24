@@ -17,12 +17,16 @@ In an era where dozens of groundbreaking papers are released daily on ArXiv, kee
 
 ## 🔗 Documentation
 
-| Document | Description | 描述 |
-|----------|-------------|------|
+| Document | Description | 文件 | 描述 |
+|----------|-------------|------|------|
+| [Full User Manual](./docs/full_user_manual-en.md) | Detailed explanation of all features | [完整用户手册 (中文版)](./docs/full_user_manual-cn.md) | 完整用户手册：所有功能的深度说明 |
+
+## 🔗 Quick Jump
+| Section | Description | 描述 |
+|----------|------------|------|
 | [Key Features](#-key-features) | Overview of system capabilities | 系统功能总览 |
 | [Getting Started](#-getting-started) | How to configure and run this project | 如何配置与运行本项目 |
 | [Quick Usage Guide](#-quick-usage-guide) | Basic UI intro & minimal usage workflow | 基础使用指南：界面按钮与最小可用流程 |
-| [Full User Manual](./docs/full_user_manual.md) | Detailed explanation of all features | 完整用户手册：所有功能的深度说明 |
 | [Project Structure](#-project-structure) | Project Structure Description | 项目结构说明 |
 | [FAQ](#-faq) | Common problems and possible solutions | 常见问题与可能的解决方案 |
 
