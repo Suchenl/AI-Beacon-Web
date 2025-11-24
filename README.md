@@ -47,55 +47,22 @@ The system comes pre-loaded with a curated ontology of modern AI, but is **fully
 -   **Node.js** (v16 or higher) - *Only required for development mode*
 -   A **Google Gemini API Key** (Get one for free [here](https://aistudio.google.com/app/apikey))
 
-### Installation Options
-
-#### Option 1: Standalone Executable (Recommended for End Users)
-
-1. **Download the executable** for your platform from the [Releases](https://github.com/suchenl/ai-beacon/releases) page:
-   - `AI-Beacon-Startup.exe` (Windows)
-   - `AI-Beacon-Startup-macOS` (macOS)
-   - `AI-Beacon-Startup-Linux` (Linux)
-
-2. **Place the executable** in the project directory (or any directory with the project files)
-
-3. **Double-click to run** - The app will:
-   - Automatically check for Node.js
-   - Prompt for API key if not configured
-   - Install dependencies on first run
-   - Launch the development server
-
-#### Option 2: Development Mode (For Contributors)
-
+### Use Steps
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/suchenl/ai-beacon.git
-   cd ai-beacon
+   git clone https://github.com/Suchenl/AI-Beacon-Web.git
    ```
-
-2. **Install dependencies**
+2. **Grant permissions to executable files (for macOS, Windows can skip)**
    ```bash
-   npm install
+   xattr -r -d com.apple.quarantine AI-Beacon-Web
    ```
-
-3. **Configure Environment**
-   Create a `.env.local` file in the root directory:
-   ```env
-   VITE_GEMINI_API_KEY=your_actual_api_key_here
-   ```
-   Or use the setup script:
-   ```bash
-   node src/setup.js
-   ```
-
+3. **Install dependencies and initialize configurations** 
+   - **Windows**: *Double-click* `AI-Beacon-Web\quick_start_win\init.bat`
+   - **macOS**: *Double-click* `AI-Beacon-Web/quick_start_os/init.command`
+  
 4. **Run the App**
-   ```bash
-   npm run dev
-   ```
-   Or use the convenience scripts:
-   - **Windows**: `scripts\start_win.bat`
-   - **macOS/Linux**: `./scripts/start_os.command`
-
----
+   - **Windows**: *Double-click* `AI-Beacon-Web\quick_start_win\run.bat`
+   - **macOS**: *Double-click* `AI-Beacon-Web/quick_start_os/run.command`   
 
 ## 📖 Usage Guide
 
@@ -123,69 +90,29 @@ Toggle the **"Edit Mode"** button in the top right header. This unlocks:
 
 ---
 
-## 🛠️ Building Executables
-
-If you want to build your own executables with custom icons:
-
-### Prerequisites
--   **Go** (v1.18 or higher) - [Download](https://golang.org/dl/)
--   **rsrc** (for icon support) - `go install github.com/akavel/rsrc@latest`
-
-### Build Steps
-
-**Windows:**
-```cmd
-scripts\build_exe.bat
-```
-
-**macOS/Linux:**
-```bash
-chmod +x scripts/build_exe.sh
-./scripts/build_exe.sh
-```
-
-The executables will be generated in the `dist/` folder.
-
-For detailed instructions, see:
--   [Quick Start Guide](docs/QUICK_START_EXE.md)
--   [Complete Build Documentation](docs/BUILD_EXE_README.md)
--   [Icon Guide](docs/ICON_GUIDE.md)
-
----
-
 ## 📁 Project Structure
 
 ```
 ai-beacon/
 ├── assets/              # Resource files (icons, images)
-├── build/               # Go source code for building executables
-├── dist/                # Build output (executables)
-├── docs/                # Documentation
-│   ├── BUILD_EXE_README.md
-│   ├── QUICK_START_EXE.md
-│   ├── ICON_GUIDE.md
-│   └── ...
-├── scripts/             # Utility scripts
-│   ├── start_win.bat
-│   ├── start_os.command
-│   ├── build_exe.bat
-│   └── ...
+├── public/              # Public assets
+├── quick_start_win/
+│   ├── init.bat         # Install dependencies and initialize configurations (for Windows)
+│   ├── run.bat          # Run the App (for Windows)
+├── quick_start_os/
+│   ├── init.command         # Install dependencies and initialize configurations (for macOS)
+│   ├── run.command          # Run the App (for macOS)
 ├── src/                 # Application source code
 │   ├── App.tsx
 │   ├── index.tsx
 │   ├── View*.tsx
 │   └── ...
-├── public/              # Public assets
 ├── index.html           # HTML template
 ├── package.json         # Node.js configuration
 ├── vite.config.ts       # Vite configuration
 ├── tsconfig.json        # TypeScript configuration
 └── README.md            # This file
 ```
-
-For detailed structure documentation, see [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md).
-
----
 
 ## 🛠️ Tech Stack
 
@@ -195,18 +122,7 @@ For detailed structure documentation, see [docs/PROJECT_STRUCTURE.md](docs/PROJE
 -   **Icons**: Heroicons / Custom SVG
 -   **Markdown**: `react-markdown`
 -   **Build Tools**: Go (for executable packaging)
-
----
-
-## 📚 Documentation
-
--   [Project Structure](docs/PROJECT_STRUCTURE.md) - Detailed project organization
--   [Building Executables](docs/BUILD_EXE_README.md) - Complete build guide
--   [Quick Start (Executables)](docs/QUICK_START_EXE.md) - Fast track for building
--   [Icon Guide](docs/ICON_GUIDE.md) - Adding custom icons
--   [Go Installation](docs/INSTALL_GO.md) - Go setup guide
--   [Troubleshooting Icons](docs/TROUBLESHOOT_ICON.md) - Icon display issues
-
+-   
 ---
 
 ## 🤝 Contributing
@@ -238,7 +154,7 @@ This project performs **web scraping via LLM grounding**. Please respect rate li
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the Apache 2.0 License. See `LICENSE` for more information.
 
 ---
 
@@ -252,9 +168,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📞 Support
 
--   **Issues**: [GitHub Issues](https://github.com/suchenl/ai-beacon/issues)
--   **Discussions**: [GitHub Discussions](https://github.com/suchenl/ai-beacon/discussions)
-
+-   **Issues**: [GitHub Issues](https://github.com/Suchenl/AI-Beacon-Web/issues)
 ---
 
 **Made with ❤️ for the AI Research Community**
