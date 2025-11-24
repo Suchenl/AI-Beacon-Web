@@ -13,15 +13,22 @@ In an era where dozens of groundbreaking papers are released daily on ArXiv, kee
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features 
 
-### 🏗️ The 5 Pillars Architecture
-The system comes pre-loaded with a curated ontology of modern AI, but is **fully customizable**:
-1.  **Perception & Unified Models** (SSL, World Models, Multimodal)
-2.  **Intelligence & Reasoning** (CoT, Neuro-symbolic, Long-context)
-3.  **Agents & Interaction** (RL, Tool Use, Embodiment)
-4.  **Safety & Alignment** (RLHF, Interpretability, Robustness)
-5.  **Efficiency & Systems** (Scaling Laws, Quantization, FlashAttention)
+### 🏗️ Structured, Fully-Editable Knowledge Architecture
+This project organizes research knowledge in three layers:
+-  **Domains (Pillars)** — top-level conceptual fields (e.g., Perception & Unified Models).  
+-  **Topics** — sub-areas within each domain (e.g., Self-Supervised Learning (SSL)).  
+-  **Papers / Artifacts** — items such as papers, datasets, repos, notes, or videos.
+The system ships with a curated ontology but **every element is editable**. There are no locked categories — users can add, rename, remove, or reorganize entries.
+
+#### Default Domains
+The system includes these default domains (modifiable):
+1. **Perception & Unified Models**: `Self-supervised learning (SSL)`, `Multimodal Unification`, `World Models`
+2. **Intelligence & Reasoning**: `Chain of Thought & Planning`, `Long Context & Memory`
+3. **Agents & Interaction**: `Tool Use & Agents` (''Reinforcement learning, embodied AI, ...'' will be integrated in the future)
+4. **Safety & Alignment**: `Value Alignment` (''Interpretability, AIGC Safty, Model Safty, ...'' will be integrated in the future)
+5. **Efficiency & Scaling**: `Scaling Laws`, `Architecture Optimization` (''Quantization, Efficient Attention, ...'' will be integrated in the future)
 
 ### 🤖 AI-Powered Workflows (Powered by Gemini 2.5)
 -   **✨ Magic Auto-Fill**: Add a paper by title (e.g., "DINOv3"), and the AI automatically fetches the authors, publication date, summary, GitHub stars, and PDF links.
@@ -31,13 +38,11 @@ The system comes pre-loaded with a curated ontology of modern AI, but is **fully
 -   **🎓 AI Tutor**: A built-in chat interface acting as a senior researcher to explain mathematical concepts or architectural details.
 
 ### 🛡️ Local-First & Collaborative
--   **Privacy Focused**: Your API Key stays in your browser. Data is stored in `localStorage`.
--   **Import/Export**: Share specific **Topics** (e.g., "Transformers") or entire **Pillars** with colleagues via JSON. Collaborative curation made easy.
+-   **Privacy Focused**: Your API Key stays in your local environment. Data is stored in `localStorage` and a local database (if linked). **Linking to local files** is **strongly recommended** to avoid data loss and enhance team collaboration. Choose the `./public/knowledge-base.json` as a start.
+-   **Import/Export**: Share specific **Topics** (e.g., "Transformers") or entire **Domain (Pillars)** with colleagues via JSON. Collaborative curation made easy.
+-   **Comments**: You can also comment on each paper to record your thoughts or ideas, or to share these with your co-operators -- by synchronizing shared database files (e.g., upload the shared database file to Nutstore APP, then link to this file, rather than `./public/knowledge-base.json`. This switch is very easy, and you can switch back at any time.)
 
-### 🚀 Standalone Executables
--   **Cross-Platform**: Pre-built executables for Windows, macOS, and Linux
--   **One-Click Launch**: No need to install Node.js or manage dependencies
--   **Custom Icons**: Support for custom application icons
+
 
 ---
 
