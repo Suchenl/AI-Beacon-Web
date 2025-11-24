@@ -1,6 +1,6 @@
 # 📡 AI Beacon
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-Apache%202.0-brightgreen.svg)
 ![Tech](https://img.shields.io/badge/Built%20with-React%20%7C%20TypeScript%20%7C%20Gemini-purple)
 ![Status](https://img.shields.io/badge/Status-Active%20Research-green)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
@@ -18,15 +18,13 @@ In an era where dozens of groundbreaking papers are released daily on ArXiv, kee
 
 # 🔗 Documentation
 
-| Document | Description |
-|---------|-------------|
-| [Getting Started](#-getting-started) | 如何安装、运行、配置本项目 |
-| [User Guide](./docs/user-guide.md) | 完整的用户使用教程 |
-| [Developer Guide](./docs/developer-guide.md) | 开发者文档、系统结构、目录说明 |
-| [Configuration Guide](./docs/configuration.md) | 配置文件说明，如 `.env`、环境变量等 |
-| [API Reference](./docs/api-reference.md) | 接口、函数、类的说明（如适用） |
-| [Changelog](./docs/changelog.md) | 项目更新记录 |
-| [FAQ](./docs/faq.md) | 常见问题与解决方案 |
+| Document | Description | 描述 |
+|----------|-------------|------|
+| [Key Features](#key-features) | Overview of system capabilities | 系统功能总览 |
+| [Getting Started](#getting-started) | How to configure and run this project | 如何配置与运行本项目 |
+| [User Guide](#user-guide) | Quick start guide | 一份简单的使用说明 |
+| [Project Structure](#project-structure) | Project Structure Description | 项目结构说明 |
+| [FAQ](#faq) | Common problems and possible solutions | 常见问题与可能的解决方案 |
 
 ## ✨ Key Features 
 
@@ -84,7 +82,7 @@ The system includes these default domains (modifiable):
    - **Windows**: *Double-click* `AI-Beacon-Web\quick_start_win\run.bat`
    - **macOS**: *Double-click* `AI-Beacon-Web/quick_start_os/run.command`   
 
-## 📖 Usage Guide
+## 📖 User Guide
 
 ### 1. Edit Mode
 Toggle the **"Edit Mode"** button in the top right header. This unlocks:
@@ -134,6 +132,8 @@ ai-beacon/
 ├── tsconfig.json        # TypeScript configuration
 └── README.md            # This file
 ```
+
+## ❓ FAQ
 
 ## 🛠️ Tech Stack
 
