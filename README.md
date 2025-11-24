@@ -20,7 +20,7 @@ In an era where dozens of groundbreaking papers are released daily on ArXiv, kee
 
 | Document | Description |
 |---------|-------------|
-| [Getting Started](./docs/getting-started.md) | 如何安装、运行、配置本项目 |
+| [Getting Started](#-getting-started) | 如何安装、运行、配置本项目 |
 | [User Guide](./docs/user-guide.md) | 完整的用户使用教程 |
 | [Developer Guide](./docs/developer-guide.md) | 开发者文档、系统结构、目录说明 |
 | [Configuration Guide](./docs/configuration.md) | 配置文件说明，如 `.env`、环境变量等 |
