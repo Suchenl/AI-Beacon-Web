@@ -67,7 +67,7 @@ if exist "node_modules\" (
 if not exist "node_modules\" (
     echo 📦 First run detected
     echo 检测到首次运行
-    echo Installing dependencies (npm install)
+    echo Installing dependencies (npm install^)
     echo 正在安装依赖
     echo.
     
@@ -96,14 +96,12 @@ REM ========================================
 echo.
 
 REM 4.1. 配置变量
-REM 【修正】不要用 %CD%，必须用 %~dp0 才能保证别人下载解压后路径正确
-REM %~dp0 自带结尾的 \，所以后面不用加 \
 pushd "%~dp0.."
 set "WORK_DIR=%CD%"
 popd
 set "TARGET_REL_PATH=quick_start_win\run-win.bat"
 set "ICON_REL_PATH=assets\icon.ico"
-set "SHORTCUT_NAME=AI-Beacon-Web.lnk"
+set "SHORTCUT_NAME=AI Beacon.lnk"
 
 REM 拼接绝对路径
 set "TARGET_FULL_PATH=!WORK_DIR!\%TARGET_REL_PATH%"
