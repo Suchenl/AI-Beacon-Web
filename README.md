@@ -68,7 +68,7 @@ The system includes these default domains (modifiable):
 ## 🚀 Getting Started
 
 ### Prerequisites
--   **Node.js** (v16 or higher)
+-   **[Node.js](https://nodejs.org/)** (v16 or higher)
 -   A **Google Gemini API Key** (Get one for free [here](https://aistudio.google.com/app/apikey))
 
 ### Use Steps
