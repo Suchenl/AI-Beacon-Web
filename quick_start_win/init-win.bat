@@ -414,8 +414,11 @@ echo Initialization Complete
 echo 初始化完成
 echo ========================================
 echo.
-echo You can now run run_local.bat to start the app
-echo 现在可以运行 run_local.bat 来启动应用
+echo You can now double click the shortcut AI Beacon(.lnk^) or run quick_start_win\run-win.bat to start the app
+echo 现在可以双击快捷方式 AI Beacon(.lnk^) 或 quick_start_win\run-win.bat 来启动应用
+echo .
+echo You can also drag the shortcut to the desktop or any other location, so you can quickly start the app later
+echo 你还可以将快捷方式拖动到桌面或任何地方，以便之后快速启动应用
 echo.
 pause
 
