@@ -81,12 +81,17 @@ The system includes these default domains (modifiable):
    xattr -r -d com.apple.quarantine AI-Beacon-Web
    ```
 3. **Install dependencies and initialize configurations** 
-   - **Windows**: *Double-click* `AI-Beacon-Web\quick_start_win\init.bat`
-   - **macOS**: *Double-click* `AI-Beacon-Web/quick_start_os/init.command`
+   - **Windows**: *Double-click* `AI-Beacon-Web\quick_start_win\init-win.bat`
+   - **macOS**: *Double-click* `AI-Beacon-Web/quick_start_os/init-os.command`
   
 4. **Run the App**
-   - **Windows**: *Double-click* `AI-Beacon-Web\quick_start_win\run.bat`
-   - **macOS**: *Double-click* `AI-Beacon-Web/quick_start_os/run.command`   
+   - **Windows**:
+      - Option 1: *Double-click* `AI-Beacon-Web\quick_start_win\run-win.bat`
+      - Option 2: *Double-click* the shortcut `AI-Beacon-Web\AI Beacon(.lnk)`
+         - You can also copy or move the shortcut to the desktop or any other location, so you can quickly start the app later.
+   - **macOS**:
+      - Option 1: *Double-click* `AI-Beacon-Web/quick_start_os/run-os.command`
+      - Option 2 (shortcut): For macOS users, due to technical reasons, automatic shortcut creation is not currently supported. You can quickly create a shortcut manually and replace the icon with `assets\icon.ico.` Afterwards, you can freely copy or move it for easier use later.
 
 ---
 
