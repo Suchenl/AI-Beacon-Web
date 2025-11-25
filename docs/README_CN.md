@@ -67,7 +67,7 @@
 ## 🚀 快速上手
 
 ### 环境要求
-- **Node.js** (v16 或更高)
+- **[Node.js](https://nodejs.org/)** (v16 或更高)
 - **Google Gemini API Key**（免费申请：[链接](https://aistudio.google.com/app/apikey)）
 
 ### 使用步骤
