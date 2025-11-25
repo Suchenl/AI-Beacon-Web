@@ -10,6 +10,11 @@ echo ========================================
 echo.
 
 REM 1. 进入当前脚本所在的目录
+echo ========================================
+echo 1. Entering current script directory
+echo 进入当前脚本所在的目录
+echo ========================================
+echo.
 cd /d "%~dp0\.."
 if errorlevel 1 (
     echo ❌ Failed to change directory
@@ -22,8 +27,8 @@ echo.
 
 REM 2. 检查 Node.js
 echo ========================================
-echo Checking Node.js
-echo 检查 Node.js
+echo 2. Checking Node.js
+echo 2. 检查 Node.js
 echo ========================================
 echo.
 
@@ -48,8 +53,8 @@ echo.
 
 REM 3. 检查并安装依赖
 echo ========================================
-echo Dependencies
-echo 依赖检查
+echo 3. Dependencies
+echo 3. 依赖检查
 echo ========================================
 echo.
 
@@ -57,7 +62,9 @@ if exist "node_modules\" (
     echo ✅ Dependencies check passed
     echo 依赖库检查通过
     echo.
-) else (
+    goto :EndDependencies
+)
+if not exist "node_modules\" (
     echo 📦 First run detected
     echo 检测到首次运行
     echo Installing dependencies (npm install)
@@ -80,8 +87,138 @@ if exist "node_modules\" (
     echo 依赖安装完成
     echo.
 )
+:EndDependencies
 
-REM 4. API Key 配置循环
+REM ========================================
+REM 4. Shortcut Configuration
+REM 4. 快捷方式配置
+REM ========================================
+echo.
+
+REM 4.1. 配置变量
+REM 【修正】不要用 %CD%，必须用 %~dp0 才能保证别人下载解压后路径正确
+REM %~dp0 自带结尾的 \，所以后面不用加 \
+pushd "%~dp0.."
+set "WORK_DIR=%CD%"
+popd
+set "TARGET_REL_PATH=quick_start_win\run-win.bat"
+set "ICON_REL_PATH=assets\icon.ico"
+set "SHORTCUT_NAME=AI-Beacon-Web.lnk"
+
+REM 拼接绝对路径
+set "TARGET_FULL_PATH=!WORK_DIR!\%TARGET_REL_PATH%"
+set "ICON_FULL_PATH=!WORK_DIR!\%ICON_REL_PATH%"
+set "SHORTCUT_FULL_PATH=!WORK_DIR!\%SHORTCUT_NAME%"
+
+echo Work Dir: "!WORK_DIR!"
+
+REM 4.2. 检查快捷方式是否已存在
+if exist "!SHORTCUT_FULL_PATH!" (
+    echo [INFO] Shortcut already exists.
+    echo [信息] 快捷方式已存在，跳过创建。
+    goto :EndShortcut
+)
+
+REM 4.3. 检查目标文件是否存在
+if not exist "!TARGET_FULL_PATH!" (
+    echo [WARNING] Target file not found!
+    echo [警告] 找不到目标文件：
+    echo "!TARGET_FULL_PATH!"
+    echo 跳过快捷方式创建。
+    goto :EndShortcut
+)
+
+REM 4.4. 跳转到创建逻辑
+goto :CreateShortcut
+
+:CreateShortcut
+echo Creating shortcut...
+echo 正在创建快捷方式...
+
+set "TEMP_PS=%TEMP%\create_shortcut_%RANDOM%.ps1"
+
+REM =================================================
+REM 4.4.1. 生成纯净的 PowerShell 脚本 (含验证逻辑)
+REM =================================================
+(
+    echo param^(
+    echo     [string]$LnkPath,
+    echo     [string]$Target,
+    echo     [string]$WorkDir,
+    echo     [string]$IconPath
+    echo ^)
+    echo $ErrorActionPreference = 'Stop'
+    echo try {
+    echo     Write-Host "--------------------------------"
+    echo     Write-Host "Target: $Target"
+    echo.
+    echo     $ws = New-Object -ComObject WScript.Shell
+    echo     $s = $ws.CreateShortcut^($LnkPath^)
+    echo     $s.TargetPath = $Target
+    echo     $s.WorkingDirectory = $WorkDir
+    echo     $s.Description = 'Launch Project'
+    echo.
+    echo     $FinalIconStr = ""
+    echo     if ^($IconPath -ne ""^) {
+    REM      强制添加 ,0 这是最标准的写法
+    echo         $FinalIconStr = "$IconPath,0"
+    echo         Write-Host "Setting Icon to: $FinalIconStr"
+    echo         $s.IconLocation = $FinalIconStr
+    echo     }
+    echo.
+    echo     $s.Save^(^)
+    echo.
+    REM      === 关键步骤：回读验证 ===
+    REM      重新读取刚刚保存的快捷方式，看看 Windows 到底有没有接受这个图标路径
+    echo     $s_verify = $ws.CreateShortcut^($LnkPath^)
+    echo     Write-Host "Readback Verify: $($s_verify.IconLocation)"
+    echo.
+    echo     if ^($IconPath -ne "" -and $s_verify.IconLocation -ne $FinalIconStr^) {
+    echo         Write-Host "WARNING: Icon path was NOT saved by Windows! The .ico file might be invalid." -ForegroundColor Yellow
+    echo     } elseif ^($IconPath -ne ""^) {
+    echo         Write-Host "VERIFY OK: Icon path saved successfully." -ForegroundColor Green
+    echo     }
+    echo     Write-Host "--------------------------------"
+    echo } catch {
+    echo     Write-Host "Error: $($_.Exception.Message)"
+    echo     exit 1
+    echo }
+) > "!TEMP_PS!"
+
+REM =================================================
+REM 4.4.2. 准备参数并调用
+REM =================================================
+
+REM 再次确认图标路径，如果不存在则传空字符串
+if not exist "!ICON_FULL_PATH!" (
+    echo [INFO] Icon file not found, skipping icon setting.
+    set "ICON_FULL_PATH="
+)
+
+REM 调用 PowerShell
+powershell -NoProfile -ExecutionPolicy Bypass -File "!TEMP_PS!" "!SHORTCUT_FULL_PATH!" "!TARGET_FULL_PATH!" "!WORK_DIR!" "!ICON_FULL_PATH!"
+
+REM 检查结果
+if !errorlevel! neq 0 (
+    echo.
+    echo [ERROR] Failed to create shortcut.
+    echo [错误] 快捷方式创建失败。
+    echo.
+) else (
+    echo.
+    echo [SUCCESS] Shortcut created successfully!
+    echo [成功] 快捷方式创建成功。
+    echo.
+)
+
+REM 清理临时文件
+if exist "!TEMP_PS!" del "!TEMP_PS!"
+
+:EndShortcut
+echo.
+
+
+REM 5. API Key 配置循环
 echo ========================================
 echo API Key Configuration
 echo API 密钥配置
