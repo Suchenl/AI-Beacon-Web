@@ -80,15 +80,20 @@
    ```bash
    xattr -r -d com.apple.quarantine AI-Beacon-Web
    ```
+   
 3. **安装依赖并初始化配置**
 
    * **Windows**：双击 `AI-Beacon-Web\quick_start_win\init.bat`
    * **macOS**：双击 `AI-Beacon-Web/quick_start_os/init.command`
-4. **运行应用**
-
-   * **Windows**：双击 `AI-Beacon-Web\quick_start_win\run.bat`
-   * **macOS**：双击 `AI-Beacon-Web/quick_start_os/run.command`
-
+  
+4. **运行应用程序**
+   - **Windows**：
+      - 方式 1：双击 `AI-Beacon-Web\quick_start_win\run-win.bat`
+      - 方式 2：双击快捷方式 `AI-Beacon-Web\AI Beacon(.lnk)`
+         - 你也可以将该快捷方式复制或移动到桌面或其他任意位置，方便之后快速启动应用。
+   - **macOS**：
+      - 方式 1：双击 `AI-Beacon-Web/quick_start_os/run-os.command`
+      - 方式 2（快捷方式）：由于技术原因，macOS 当前暂不支持自动创建快捷方式。你可以手动创建快捷方式并将图标替换为 `assets\icon.ico`。之后，你可以自由复制或移动它，以便更方便地使用。
 ---
 
 ## 🚀 基础使用指南
